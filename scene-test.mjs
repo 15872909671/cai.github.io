@@ -1,0 +1,24 @@
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+const source=await readFile('app.js','utf8');
+const fn=source.slice(source.indexOf('  function startScene('),source.indexOf('  function render('));
+const events=()=>({handlers:{},addEventListener(k,v){this.handlers[k]=v;},removeEventListener(k){delete this.handlers[k];}});
+let draws=0,disconnected=false,queued=new Map(),seq=0;
+const ctx={clearRect(){draws++;},setTransform(){},beginPath(){},moveTo(){},lineTo(){},stroke(){},fillRect(){},arc(){},fill(){}};
+const stage={...events(),classList:{add(){}},getBoundingClientRect:()=>({width:1000,height:500,left:0,top:0})};
+const button={...events(),setAttribute(k,v){this[k]=v;}};
+const doc={...events(),hidden:false,getElementById:()=>button};
+const reduced={...events(),matches:false};
+const context={Math,document:doc,matchMedia:()=>reduced,devicePixelRatio:3,ResizeObserver:class{observe(){}disconnect(){disconnected=true;}},requestAnimationFrame(f){queued.set(++seq,f);return seq;},cancelAnimationFrame(id){queued.delete(id);}};
+vm.createContext(context);vm.runInContext(fn+';globalThis.start=startScene;',context);
+const canvas={getContext:()=>ctx,parentElement:stage};
+const stop=context.start(canvas);
+assert.equal(canvas.width,2000);assert.equal(queued.size,1);assert.ok(draws>0);
+doc.hidden=true;doc.handlers.visibilitychange();assert.equal(queued.size,0);
+doc.hidden=false;doc.handlers.visibilitychange();assert.equal(queued.size,1);
+reduced.matches=true;reduced.handlers.change();assert.equal(queued.size,0);
+stop();assert.ok(disconnected);assert.equal(queued.size,0);assert.equal(Object.keys(stage.handlers).length,0);assert.equal(Object.keys(doc.handlers).length,0);assert.equal(Object.keys(reduced.handlers).length,0);
+assert.equal(typeof context.start(null),'function');
+console.log('PASS: canvas drawing, pixel-ratio limit, visibility, reduced motion, teardown and fallback.');
+
