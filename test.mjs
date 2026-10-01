@@ -20,7 +20,7 @@ const node=id=>{if(!nodes.has(id))nodes.set(id,new Element());return nodes.get(i
 const listeners={};
 const context={console,URLSearchParams,document:{getElementById:node,querySelector:()=>null,querySelectorAll:()=>[],addEventListener:(k,v)=>listeners[k]=v},location:{hash:'#/'},matchMedia:()=>({matches:true})};
 context.window=context;context.scrollTo=()=>{};context.addEventListener=(k,v)=>listeners[k]=v;
-vm.createContext(context);vm.runInContext(await readFile('content.js','utf8'),context);vm.runInContext(await readFile('app.js','utf8'),context);
+vm.createContext(context);vm.runInContext(await readFile('content.js','utf8'),context);vm.runInContext(await readFile('folders.js','utf8'),context);vm.runInContext(await readFile('app.js','utf8'),context);
 let checks=0;
 const route=hash=>{context.location.hash=hash;listeners.hashchange();checks++;return node('main').innerHTML;};
 assert.match(route('#/'),/三个集合/);
@@ -58,6 +58,27 @@ context.BLOG.navigation=[originalNav[0],{id:'archive',title:'归档',href:'#/arc
 assert.match(route('#/archive'),/职业合集/);assert.match(route('#/interviews'),/面试经历/);assert.match(node('nav').innerHTML,/展开归档子栏目/);
 context.BLOG.navigation=originalNav;
 checks+=6;
+// A collection's tree never leaks unrelated navigation branches.
+const tree=hash=>route(hash).split('<aside class="file-tree"')[1]?.split('</aside>')[0]||'';
+assert.doesNotMatch(tree('#/knowledge'),/职业合集|作品集合|面试经历|随笔/);
+assert.doesNotMatch(tree('#/interviews'),/技术博客|Go 并发|随笔/);
+context.BLOG.folders.push({id:'nested',name:'取消与超时',collection:'knowledge',parent_id:'knowledge/Go'});
+context.BLOG.articles.push({id:'nested-post',title:'嵌套帖子',folder_id:'nested',date:'2026-10-01',sections:[]});
+assert.match(route('#/folder/'+encodeURIComponent('knowledge/Go')),/取消与超时/);
+assert.match(route('#/folder/nested'),/嵌套帖子/);
+assert.match(route('#/article/nested-post'),/取消与超时/);
+assert.doesNotMatch(tree('#/essays'),/嵌套帖子/);
+assert.match(route('#/folder/missing'),/这一页还没有写下/);
+context.BLOG.articles.pop();context.BLOG.folders.pop();
+// Hover keeps click/touch and keyboard interaction available via native details.
+const navItem=new Element(),menu=new Element();navItem.querySelector=()=>menu;navItem.contains=el=>el===menu;
+context.document.querySelectorAll=selector=>selector==='#nav .nav-item'?[navItem]:[];
+route('#/');navItem.events.pointerenter({pointerType:'mouse'});assert.equal(menu.open,true);
+navItem.events.pointerleave({pointerType:'mouse'});assert.equal(menu.open,false);
+navItem.events.pointerenter({pointerType:'touch'});assert.equal(menu.open,false);
+navItem.events.pointerenter({pointerType:'mouse'});navItem.events.focusout({relatedTarget:null});assert.equal(menu.open,false);
+context.document.querySelectorAll=()=>[];
+checks+=11;
 // The two deployment sources must remain identical.
-for(const file of ['index.html','app.js','content.js','styles.css'])assert.equal(await readFile(file,'utf8'),await readFile('docs/'+file,'utf8'));checks+=4;
+for(const file of ['index.html','app.js','content.js','styles.css','folders.js'])assert.equal(await readFile(file,'utf8'),await readFile('docs/'+file,'utf8'));checks+=4;
 console.log(`PASS: ${checks} route / interaction / escaping / deployment checks. Visual layout is not tested by this harness.`);
