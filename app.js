@@ -128,6 +128,7 @@
   }
   function render(){
     stopScene();
+    main.classList.remove('is-writing');
     let parts;try{parts=(location.hash.slice(1).split('?')[0]||'/').split('/').filter(Boolean).map(decodeURIComponent);}catch{parts=['404'];}
     const [rawPage,id,...groups]=parts;const page=rawPage==='home'?undefined:rawPage;
     const navFolder=navNodes(D.navigation).find(n=>n.href==='#/'+page&&n.children?.length);
@@ -137,6 +138,14 @@
     main.setAttribute('data-page',page||'home');
     if(Object.hasOwn(labels,collection)||navFolder)html=`<div class="explorer"><button class="mobile-directory" aria-expanded="false" aria-controls="directory" id="directory-toggle">版块与合集</button>${fileTree(page,id)}<div class="file-pane">${html}</div></div>`;
     main.innerHTML=!page?html:`<div class="route-strip field-${E(Object.hasOwn(labels,collection)?collection:'neutral')}" aria-hidden="true"><span>${E(labels[collection]||({albums:'合集',resume:'关于',tools:'工具',photos:'相册',guestbook:'留言'}[page])||'CAI')}</span></div><div class="container">${html}</div>`;
+    main.classList.toggle('is-reading',['article','project','interview','essay'].includes(page));
+    const readingBody=main.querySelector('.article-body'),toc=main.querySelector('.toc');
+    if(readingBody&&toc){
+      const headings=[...readingBody.querySelectorAll('h2,h3,h4')];
+      headings.forEach((h,i)=>h.id='reading-'+i);
+      toc.innerHTML=`<h2>本文目录</h2>${headings.map((h,i)=>`<a class="toc-level-${h.tagName.toLowerCase()}" href="${E(location.hash.split('?')[0])}?section=${i}" data-section="${i}">${E(h.textContent)}</a>`).join('')||'<p>暂无小标题</p>'}`;
+      main.querySelector('.board-sidebar')?.prepend(toc);
+    }
     stopScene=startScene(main.querySelector('#research-field'));
     document.body.classList.toggle('is-home',!page);
     document.getElementById('browse-posts')?.addEventListener('click',()=>document.getElementById('home-posts').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'}));
@@ -148,11 +157,11 @@
 
     document.getElementById('directory-toggle')?.addEventListener('click',e=>{const open=document.getElementById('directory').classList.toggle('is-open');e.currentTarget.setAttribute('aria-expanded',String(open));});
     document.getElementById('print-resume')?.addEventListener('click',()=>window.print());
-    main.querySelectorAll('[data-section]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();document.getElementById('section-'+a.dataset.section)?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});}));
+    main.querySelectorAll('[data-section]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();(document.getElementById('reading-'+a.dataset.section)||document.getElementById('section-'+a.dataset.section))?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});}));
     document.getElementById('board-search')?.addEventListener('submit',e=>{e.preventDefault();const params=new URLSearchParams(location.hash.split('?')[1]||'');params.set('q',document.getElementById('board-query').value.trim());params.delete('page');location.hash=location.hash.split('?')[0]+'?'+params.toString();});
     window.InlineWriter?.mount();
     const section=new URLSearchParams(location.hash.split('?')[1]||'').get('section');
-    if(section!==null)document.getElementById('section-'+section)?.scrollIntoView();else window.scrollTo(0,0);
+    if(section!==null)(document.getElementById('reading-'+section)||document.getElementById('section-'+section))?.scrollIntoView();else window.scrollTo(0,0);
   }
   const dialog=document.getElementById('search-dialog'),input=document.getElementById('search-input'),results=document.getElementById('search-results');
   function searchIndex(){return allDocs();}

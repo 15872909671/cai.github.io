@@ -1,5 +1,5 @@
 import {JSDOM} from './.test-runtime/node_modules/jsdom/lib/api.js';
-import {readFile} from 'node:fs/promises';
+import {readFile,writeFile} from 'node:fs/promises';
 import assert from 'node:assert/strict';
 const html=await readFile('index.html','utf8');
 const dom=new JSDOM(html,{url:'https://knaios.github.io/cai.github.io/#/knowledge',runScripts:'outside-only'});
@@ -19,6 +19,13 @@ assert.equal(d.querySelector('#inline-post'),null);assert.ok(!d.getElementById('
 d.getElementById('account-button').click();let form=d.querySelector('#inline-login');form.elements.email.value='writer@example.test';form.elements.password.value='test-only';form.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await tick();
 assert.equal(logged,true);assert.equal(d.querySelector('#inline-post'),null);assert.ok(!d.querySelector('.forum-feed').textContent.includes('Private draft'));
 w.location.hash='#/article/first';await tick();assert.equal(d.querySelector('#inline-post'),null);assert.ok(d.querySelector('.article-body'));d.querySelector('[data-edit-post]').click();form=d.querySelector('#inline-post');assert.ok(form);assert.equal(form.elements.title.value,'Public post');
+assert.match(d.querySelector('.toc').textContent,/Body/);
+form.querySelector('[data-action=split]').click();assert.equal(d.querySelector('.writing-surface').dataset.mode,'split');assert.equal(d.getElementById('inline-preview').hidden,false);
+form.elements.body.value='Preview **live**';form.elements.body.dispatchEvent(new w.Event('input',{bubbles:true}));assert.match(d.getElementById('inline-preview').innerHTML,/<strong>live<\/strong>/);
+form.elements.body.setSelectionRange(0,7);form.querySelector('[data-format=bold]').click();assert.match(form.elements.body.value,/^\*\*Preview\*\*/);assert.equal(d.getElementById('inline-save-state').textContent,'尚未保存');
+form.querySelector('[data-action=preview]').click();assert.equal(d.getElementById('inline-body-label').hidden,true);
+form.querySelector('[data-action=edit]').click();assert.equal(d.getElementById('inline-body-label').hidden,false);
+if(process.env.CAI_EDITOR_PREVIEW){form.elements.title.value='Go 并发：从取消信号开始';form.elements.body.value='## 写在前面\n\n为每个后台任务明确退出条件。\n\n## 实践要点\n\n- 使用 Context 传递取消信号\n- 明确等待任务退出的位置';form.elements.body.dispatchEvent(new w.Event('input',{bubbles:true}));form.querySelector('[data-action=split]').click();form.elements.title.setAttribute('value',form.elements.title.value);form.elements.body.textContent=form.elements.body.value;const snapshot=d.documentElement.outerHTML.replace(/<script[\s\S]*?<\/script>/g,'').replaceAll('href="./','href="../');await writeFile('.test-runtime/editor-preview.html','<!doctype html>'+snapshot);form.elements.title.value='Public post';}
 form.elements.body.value='Edited **body**';form.elements.body.dispatchEvent(new w.Event('input',{bubbles:true}));
 w.confirm=()=>false;w.location.hash='#/essays';await tick();assert.equal(w.location.hash,'#/article/first');assert.equal(d.querySelector('#inline-post').elements.body.value,'Edited **body**');
 w.confirm=()=>true;form.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await tick();assert.equal(lastSave.post.body,'Edited **body**');assert.equal(lastSave.version,1);assert.equal(d.querySelector('#inline-post'),null);assert.match(d.querySelector('.article-body').innerHTML,/<strong>body<\/strong>/);
