@@ -27,7 +27,7 @@ assert.match(route('#/'),/三个集合/);
 for(const section of ['knowledge','projects','interviews','resume'])assert.doesNotMatch(route('#/'+section),/这一页还没有写下/);
 for(const [type,items] of [['article',context.BLOG.articles],['project',context.BLOG.projects],['interview',context.BLOG.interviews]])for(const item of items)assert.ok(route('#/'+type+'/'+item.id).includes(item.title));
 assert.match(route('#/project/raft-lab'),/这一页还没有写下/);assert.match(route('#/projects'),/这个文件夹还没有帖子/);assert.ok(!route('#/').includes('实验室'));assert.ok(!route('#/').includes('数字书房'));assert.match(route('#/project/digital-study'),/这一页还没有写下/);
-assert.ok(route('#/knowledge/Go').includes('Go 并发笔记'));assert.ok(!route('#/knowledge/Go').includes('读懂 Raft'));
+const goView=route('#/knowledge/Go');const goPane=goView.split('<div class="file-pane">')[1];assert.ok(goPane.includes('Go 并发笔记'));assert.ok(!goPane.includes('读懂 Raft'));assert.match(goView,/data-tree-key="knowledge\/Go" open/);assert.doesNotMatch(goView,/技术研究、阅读与排障/);const reading=route('#/article/go-cancellation');assert.match(reading,/aria-label="文件树"/);assert.match(reading,/tree-file selected[^>]*href="#\/article\/go-cancellation" aria-current="page"/);assert.match(route('#/knowledge'),/folder-list-row/);
 assert.equal(context.BLOG.companies,undefined);
 for(const path of ['companies','company/tencent','team/example'])assert.match(route('#/'+path),/这一页还没有写下/);
 assert.doesNotMatch(route('#/'),/企业集|motion-toggle/);

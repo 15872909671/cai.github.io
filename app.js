@@ -8,7 +8,7 @@
   const badge=a=>`<span class="badge ${a.demo===true?'demo':''}">${E(a.demo===true?'示例模板':a.kind||a.status||'档案')}</span>`;
   const empty=(title='还没有匹配的内容',text='换个关键词或筛选条件试试。')=>`<div class="empty"><h2>${E(title)}</h2><p>${E(text)}</p></div>`;
   const crumb=items=>`<div class="breadcrumb"><a href="#/">首页</a>${items.map(([name,url])=>`<span>/</span>${url?`<a href="${safeURL(url)}">${E(name)}</a>`:`<span>${E(name)}</span>`}`).join('')}</div>`;
-  const head=(en,title,desc)=>`<div class="page-head"><h1>${E(title)}</h1><p>${E(desc)}</p></div>`;
+  const head=(en,title,desc)=>`<div class="page-head"><h1>${E(title)}</h1></div>`;
   const routeFor=(type,id)=>`#/${type}/${encodeURIComponent(id)}`;
   const entry=(a,type)=>`<a class="entry file-entry" href="${routeFor(type,a.id)}"><span class="file-symbol" aria-hidden="true"></span><div class="file-content"><h3>${E(a.title)}</h3><p>${E(a.summary)}</p><div class="entry-top"><span>${E(a.category||a.company||a.status||'帖子')}</span><span>${E(a.date)}</span>${a.demo===true?badge(a):''}</div></div><span class="file-open" aria-hidden="true">→</span></a>`;
   function home(){
@@ -19,7 +19,17 @@
   function knowledge(category='全部'){
     if(!D.categories.includes(category))return notFound();
     const list=D.articles.filter(a=>category==='全部'||a.category===category);
-    return crumb([['知识集',category==='全部'?null:'#/knowledge'],...(category==='全部'?[]:[[category]])])+head('01 / KNOWLEDGE','知识集','技术研究、阅读与排障。')+`<button class="mobile-directory" aria-expanded="false" id="directory-toggle">☰ 技术目录 · ${E(category)}</button><div class="workspace"><aside class="sidebar" id="directory"><div class="sidebar-inner"><div class="sidebar-label">技术目录</div>${D.categories.map(c=>`<a class="side-link ${c===category?'active':''}" href="#/knowledge${c==='全部'?'':'/'+encodeURIComponent(c)}"><span>${E(c)}</span><small>${D.articles.filter(a=>c==='全部'||a.category===c).length}</small></a>`).join('')}</div></aside><section><div class="list-heading"><span>${E(category==='全部'?'全部笔记':category)}</span><span>${list.length} 篇</span></div>${list.map(a=>entry(a,'article')).join('')||empty()}</section></div>`;
+    const contents=category==='全部'?D.categories.filter(c=>c!=='全部').map(c=>`<a class="folder-list-row" href="#/knowledge/${encodeURIComponent(c)}"><span class="folder-symbol" aria-hidden="true"></span><span>${E(c)}</span><span class="folder-row-count">${D.articles.filter(a=>a.category===c).length} 篇</span></a>`).join(''):list.map(a=>entry(a,'article')).join('');
+    return crumb([['知识集',category==='全部'?null:'#/knowledge'],...(category==='全部'?[]:[[category]])])+head('',category==='全部'?'知识集':category,'')+`<section class="file-list"><div class="list-heading"><span>${category==='全部'?'文件夹':'帖子'}</span><span>${category==='全部'?D.categories.length-1:list.length} 项</span></div>${contents||empty()}</section>`;
+  }
+  const treeState=new Map();
+  function fileTree(page,id){
+    const selected={article:'knowledge',project:'projects',interview:'interviews'}[page]||page;
+    const activeArticle=page==='article'?D.articles.find(a=>a.id===id):null;
+    const file=(a,type)=>`<li><a class="tree-file ${page===type&&id===a.id?'selected':''}" href="${routeFor(type,a.id)}" ${page===type&&id===a.id?'aria-current="page"':''}><span class="file-symbol" aria-hidden="true"></span><span>${E(a.title)}</span></a></li>`;
+    const branch=(key,title,url,children,reveal,defaultOpen=false)=>`<li><details data-tree-key="${E(key)}" ${reveal||(treeState.get(key)??defaultOpen)?'open':''}><summary><span class="tree-caret" aria-hidden="true"></span><span class="folder-symbol" aria-hidden="true"></span><span class="tree-folder-name">${E(title)}</span><a class="tree-open" href="${safeURL(url)}" aria-label="打开${E(title)}文件夹">↗</a></summary><ul>${children||'<li class="tree-empty">空文件夹</li>'}</ul></details></li>`;
+    const categories=D.categories.filter(c=>c!=='全部').map(c=>branch('knowledge/'+c,c,'#/knowledge/'+encodeURIComponent(c),D.articles.filter(a=>a.category===c).map(a=>file(a,'article')).join(''),(page==='knowledge'&&id===c)||activeArticle?.category===c)).join('');
+    return `<aside class="file-tree" id="directory"><nav aria-label="文件树"><ul class="tree-root">${branch('knowledge','知识集','#/knowledge',categories,selected==='knowledge')}${branch('projects','作品集','#/projects',D.projects.map(a=>file(a,'project')).join(''),selected==='projects')}${branch('interviews','面试集','#/interviews',D.interviews.map(a=>file(a,'interview')).join(''),selected==='interviews')}</ul></nav></aside>`;
   }
   function projects(){return crumb([['作品集']])+head('','作品集','作品说明与代码链接。')+`<div class="file-list"><div class="list-heading"><span>帖子</span><span>${D.projects.length} 篇</span></div>${D.projects.map(p=>entry(p,'project')).join('')||empty('这个文件夹还没有帖子','')}</div>`;}
   function options(values,all){return `<option value="">${E(all)}</option>`+[...new Set(values)].map(v=>`<option value="${E(v)}">${E(v)}</option>`).join('');}
@@ -81,8 +91,10 @@
     if(!page)html=home();else if(page==='knowledge')html=knowledge(id);else if(page==='projects')html=projects();else if(page==='interviews')html=interviews();else if(['article','project','interview'].includes(page))html=article(page,id);else if(page==='resume')html=resume();else html=notFound();
     const collection={article:'knowledge',project:'projects',interview:'interviews'}[page]||page;
     main.setAttribute('data-page',page||'home');
+    if(Object.hasOwn(labels,collection))html=`<div class="explorer"><button class="mobile-directory" aria-expanded="false" aria-controls="directory" id="directory-toggle">文件树</button>${fileTree(page,id)}<div class="file-pane">${html}</div></div>`;
     main.innerHTML=!page?html:`<div class="route-strip field-${E(Object.hasOwn(labels,collection)?collection:'neutral')}" aria-hidden="true"></div><div class="container">${html}</div>`;
     stopScene=startScene(main.querySelector('#research-field'));
+    main.querySelectorAll('[data-tree-key]').forEach(el=>el.addEventListener('toggle',()=>{if(el.isConnected)treeState.set(el.dataset.treeKey,el.open);}));
     const active={article:'knowledge',project:'projects',interview:'interviews'}[page]||page;
     document.querySelectorAll('#nav a').forEach(a=>{const yes=a.hash==='#/'+active;a.classList.toggle('active',yes);if(yes)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
     document.getElementById('nav').classList.remove('open');document.getElementById('menu-toggle').setAttribute('aria-expanded','false');
