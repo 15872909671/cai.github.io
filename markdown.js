@@ -4,6 +4,9 @@
   function inline(source){
     const tokens=[];let text=escape(source);
     text=text.replace(/`([^`]+)`/g,(_,code)=>{tokens.push('<code>'+code+'</code>');return '\u0000'+(tokens.length-1)+'\u0000';});
+    text=text.replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+|media:[a-zA-Z0-9_-]+\/[a-zA-Z0-9_.-]+)\)/g,(_,label,url)=>{
+      tokens.push(`<img ${url.startsWith('media:')?'data-media="'+url.slice(6)+'"':'src="'+url+'"'} alt="${label}" loading="lazy" referrerpolicy="no-referrer">`);return '\u0000'+(tokens.length-1)+'\u0000';
+    });
     text=text.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,(_,label,url)=>`<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`);
     text=text.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
     return text.replace(/\u0000(\d+)\u0000/g,(_,i)=>tokens[i]||'');

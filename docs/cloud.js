@@ -2,7 +2,7 @@
   'use strict';
   let session=null,refreshing=null;
   const config=window.CLOUD_CONFIG;
-  async function request(path,{method='GET',body,auth=false,headers={}}={}){
+  async function request(path,{method='GET',body,auth=false,headers={},binary=false}={}){
     if(auth){
       if(!session)throw Error('请先登录。');
       if(Date.now()>session.expires_at){
@@ -10,7 +10,7 @@
         try{await refreshing;}catch{session=null;throw Error('登录已过期，请重新登录。编辑内容仍保留在页面中。');}
       }
     }
-    const response=await fetch(config.url+path,{method,headers:{apikey:config.key,...(body?{'Content-Type':'application/json'}:{}),...(auth?{Authorization:'Bearer '+session.access_token}:{}),...headers},body:body?JSON.stringify(body):undefined,signal:AbortSignal.timeout(20000),cache:'no-store'});
+    const response=await fetch(config.url+path,{method,headers:{apikey:config.key,...(body?{'Content-Type':'application/json'}:{}),...(auth?{Authorization:'Bearer '+session.access_token}:{}),...headers},body:body?(binary?body:JSON.stringify(body)):undefined,signal:AbortSignal.timeout(20000),cache:'no-store'});
     const text=await response.text();let result;try{result=text?JSON.parse(text):null;}catch{throw Error('服务返回了无法识别的响应。');}
     if(!response.ok){const e=Error(result?.code==='PGRST205'?'写作数据库尚未初始化，请先运行 setup.sql。':response.status===401?'登录失败或已过期，请检查邮箱和密码。':response.status===403?'当前账号没有作者权限。':result?.code==='23505'?'该文件夹名称或帖子 ID 已存在。':result?.message||result?.msg||result?.error_description||'请求失败');e.status=response.status;throw e;}
     return result;
@@ -41,5 +41,21 @@
     }
     data.categories=['全部',...window.Folders.children(data,'knowledge').map(f=>f.name)];
   }
-  window.BlogCloud={request,login,logout,load,save,createFolder,apply};
+  async function uploadImage(file,postId){
+    const extensions={'image/png':'png','image/jpeg':'jpg','image/webp':'webp','image/gif':'gif'};
+    if(!extensions[file.type]||!file.size||file.size>5*1024*1024)throw Error('请选择不超过 5 MB 的 PNG、JPEG、WebP 或 GIF 图片。');
+    if(!/^[a-zA-Z0-9_-]+$/.test(postId))throw Error('帖子标识无效。');
+    const path=postId+'/'+crypto.randomUUID()+'.'+extensions[file.type];
+    await request('/storage/v1/object/blog-images/'+path,{method:'POST',body:file,binary:true,auth:true,headers:{'Content-Type':file.type,'x-upsert':'false'}});
+    return path;
+  }
+  async function hydrateImages(root,auth=false){
+    await Promise.all([...root.querySelectorAll('img[data-media]')].map(async img=>{
+      const path=img.dataset.media;if(img.dataset.loading)return;img.dataset.loading='true';
+      try{const result=await request('/storage/v1/object/sign/blog-images/'+path,{method:'POST',body:{expiresIn:60},auth});
+        if(img.isConnected)img.src=config.url+'/storage/v1'+result.signedURL;
+      }catch{img.alt=(img.alt||'图片')+'（暂时无法加载）';delete img.dataset.loading;}
+    }));
+  }
+  window.BlogCloud={request,login,logout,load,save,createFolder,apply,uploadImage,hydrateImages};
 })();

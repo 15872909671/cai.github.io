@@ -12,7 +12,7 @@ w.CLOUD_CONFIG={enabled:true};
 // Exercise the production data mapper with a mocked transport only.
 w.eval(await readFile('cloud.js','utf8'));const apply=w.BlogCloud.apply;
 let logged=false,lastSave=null,lastFolder=null;
-w.BlogCloud={apply,login:async()=>{logged=true;},logout:async()=>{logged=false;},load:async auth=>structuredClone({...remote,posts:remote.posts.filter(p=>auth||p.published)}),save:async(post,version)=>{lastSave={post,version};const saved={...post,version:(version||0)+1,created_at:'2026-10-01',updated_at:'2026-10-01'};const i=remote.posts.findIndex(p=>p.id===post.id);i<0?remote.posts.push(saved):remote.posts.splice(i,1,saved);return saved;},createFolder:async folder=>{lastFolder=folder;remote.folders.push({...folder,version:1});return [{...folder,version:1}];},request:async()=>null};
+w.BlogCloud={apply,login:async()=>{logged=true;return {id:"test-author"};},logout:async()=>{logged=false;},load:async auth=>structuredClone({...remote,posts:remote.posts.filter(p=>auth||p.published)}),save:async(post,version)=>{lastSave={post,version};const saved={...post,version:(version||0)+1,created_at:'2026-10-01',updated_at:'2026-10-01'};const i=remote.posts.findIndex(p=>p.id===post.id);i<0?remote.posts.push(saved):remote.posts.splice(i,1,saved);return saved;},createFolder:async folder=>{lastFolder=folder;remote.folders.push({...folder,version:1});return [{...folder,version:1}];},request:async()=>null};
 w.eval(await readFile('inline-writer.js','utf8'));
 const tick=()=>new Promise(r=>setTimeout(r,15));await tick();
 assert.equal(d.querySelector('#inline-post'),null);assert.ok(!d.getElementById('main').textContent.includes('Private draft'));assert.match(d.querySelector('.forum-feed').textContent,/Public post/);
@@ -40,4 +40,16 @@ w.location.hash='#/knowledge?view=drafts';await tick();assert.match(d.querySelec
 d.getElementById('search-results').innerHTML='SECRET';d.getElementById('account-button').click();await tick();assert.equal(logged,false);assert.equal(d.querySelector('[data-edit-post]'),null);assert.ok(!d.getElementById('main').textContent.includes('New draft'));assert.equal(d.getElementById('search-results').innerHTML,'');
 // Guest compose resumes after login without unexpectedly editing an existing post.
 d.querySelector('[data-compose]').click();form=d.querySelector('#inline-login');assert.ok(form);form.elements.email.value='writer@example.test';form.elements.password.value='test-only';form.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await tick();assert.ok(d.querySelector('#inline-post'));assert.equal(d.querySelector('#inline-post').elements.title.value,'');
+// Device backup survives leaving the editor and is recovered explicitly.
+form=d.querySelector('#inline-post');form.elements.title.value='Recover me';form.elements.body.value='UNPUBLISHED';form.elements.body.dispatchEvent(new w.Event('input',{bubbles:true}));
+await new Promise(r=>setTimeout(r,650));assert.match(d.querySelector('#inline-save-state').textContent,/已备份到此设备/);
+const backupKey=Object.keys(w.localStorage).find(k=>k.startsWith('cai-drafts:test-author:')&&w.localStorage.getItem(k).includes('Recover me'));assert.ok(backupKey);
+form.querySelector('[data-action=read]').click();d.querySelector('.device-drafts').click();d.querySelector('[data-restore="'+JSON.parse(w.localStorage.getItem(backupKey)).post.id+'"]').click();
+form=d.querySelector('#inline-post');assert.equal(form.elements.body.value,'UNPUBLISHED');form.querySelector('[data-action=draft]').click();await tick();assert.equal(w.localStorage.getItem(backupKey),null);
+// Project fields retain unrelated metadata and become real reading links.
+w.location.hash='#/projects';await tick();d.querySelector('[data-compose]').click();form=d.querySelector('#inline-post');
+form.elements.title.value='Project';form.elements.github.value='https://github.com/example/project';form.elements.demoURL.value='https://example.com';form.elements.tech.value='Go，SQL';form.elements.tech.dispatchEvent(new w.Event('input',{bubbles:true}));
+form.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await tick();assert.equal(lastSave.post.metadata.github,'https://github.com/example/project');assert.deepEqual(Array.from(lastSave.post.metadata.tags),['Go','SQL']);assert.ok(d.querySelector('.hero-actions a[href="https://example.com"]'));
+// Signed-in author editing a stale backup gets a new post, never an overwrite.
+const old={...remote.posts.find(x=>x.id==='first'),body:'Stale recovered',version:1};w.localStorage.setItem('cai-drafts:test-author:first',JSON.stringify({post:old,at:Date.now()}));w.refreshBlog();d.querySelector('.device-drafts').click();d.querySelector('[data-restore="first"]').click();form=d.querySelector('#inline-post');form.querySelector('[data-action=draft]').click();await tick();assert.notEqual(lastSave.post.id,'first');assert.equal(lastSave.version,undefined);
 dom.window.close();console.log('PASS: reading-first login, explicit edit, cancel, publish-to-read, album creation and curation, draft isolation, logout and guest compose.');

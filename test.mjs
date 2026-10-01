@@ -35,7 +35,8 @@ assert.doesNotMatch(route('#/'),/企业集|motion-toggle|数字书房|实验室/
 node('search-open').events.click();node('search-input').value='Raft';node('search-input').events.input();assert.match(node('search-results').innerHTML,/读懂 Raft/);node('search-input').value='Go';node('search-input').events.input();assert.doesNotMatch(node('search-results').innerHTML,/数据库学习清单/);node('search-input').value='';node('search-input').events.input();assert.equal(node('search-results').hidden,true);
 assert.match(route('#/article/missing'),/这一页还没有写下/);assert.match(route('#/knowledge/%ZZ'),/这一页还没有写下/);
 context.BLOG.articles[0].title='<img src=x onerror=alert(1)>';assert.ok(route('#/article/'+context.BLOG.articles[0].id).includes('&lt;img'));assert.ok(!node('main').innerHTML.includes('<img src=x'));
-assert.match(route('#/career'),/作品集合/);assert.match(route('#/essays'),/还没有帖子/);
+assert.match(route('#/posts'),/全部帖子/);assert.match(route('#/posts?board=interviews'),/面试/);
+assert.match(route('#/career'),/作品集/);assert.match(route('#/essays'),/还没有帖子/);
 const originalNav=context.BLOG.navigation;context.BLOG.navigation=[originalNav[0],{id:'archive',title:'归档',href:'#/archive',children:[originalNav[1],originalNav[2]]}];
 assert.match(route('#/archive'),/作品集/);assert.match(route('#/interviews'),/面试经历/);assert.match(node('nav').innerHTML,/mega-column/);context.BLOG.navigation=originalNav;
 context.BLOG.folders.push({id:'nested',name:'取消与超时',collection:'knowledge',parent_id:'knowledge/Go'});

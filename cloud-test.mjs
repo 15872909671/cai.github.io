@@ -43,6 +43,15 @@ await db.query("select blog_file_operation('move_folder','test-child',2,null,nul
 await db.query("select blog_file_operation('delete_post','private-test',3)");
 await db.query("select blog_file_operation('delete_folder','test-child',3)");
 assert.equal((await db.query("select * from blog_folders where id='test-child'")).rows.length,0);
+// Exercise private media policies under actual PostgreSQL RLS.
+await db.exec('reset role');
+await db.exec(`create schema storage;create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);create table storage.objects(id serial primary key,bucket_id text,name text);alter table storage.objects enable row level security;grant usage on schema storage to anon,authenticated;grant select,insert on storage.objects to anon,authenticated;grant usage on sequence storage.objects_id_seq to anon,authenticated;`);
+await db.exec(await readFile('supabase/images.sql','utf8'));await db.exec(await readFile('supabase/images.sql','utf8'));
+await role('authenticated',owner);await db.exec("insert into blog_posts(id,collection,title,body,published) values('media-test','essays','Images','![one](media:media-test/one.png)',true);insert into storage.objects(bucket_id,name) values('blog-images','media-test/one.png'),('blog-images','media-test/draft.png');");
+assert.equal((await db.query('select * from storage.objects')).rows.length,2);
+await role('anon');assert.equal((await db.query('select * from storage.objects')).rows.length,1);await assert.rejects(db.exec("insert into storage.objects(bucket_id,name) values('blog-images','hack.png')"));
+await role('authenticated',other);assert.equal((await db.query('select * from storage.objects')).rows.length,1);await assert.rejects(db.exec("insert into storage.objects(bucket_id,name) values('blog-images','hack.png')"));
+await role('authenticated',owner);await db.exec("update blog_posts set published=false where id='media-test'");await role('anon');assert.equal((await db.query('select * from storage.objects')).rows.length,0);
 await db.close();
 const context={};context.window=context;vm.createContext(context);vm.runInContext(await readFile('markdown.js','utf8'),context);
 const render=context.BlogMarkdown.render;
@@ -51,11 +60,12 @@ assert.match(render('**Bold** [link](https://example.com)'),/<strong>Bold<\/stro
 assert.doesNotMatch(render('<img src=x onerror=alert(1)> [bad](javascript:alert(1))'),/<img|href="javascript:/);
 assert.doesNotMatch(render('[x](https://a.test/"onmouseover="alert(1))'),/href="[^>]*"onmouseover="/);
 assert.match(render('```\nunclosed <script>'),/&lt;script&gt;/);
+assert.match(render('![alt](media:post/a.png)'),/data-media="post\/a.png"/);assert.doesNotMatch(render('![x](javascript:alert(1))'),/<img/);
 console.log('PASS: PostgreSQL RLS, writer allowlist, draft isolation, publish/withdraw, folder constraints, stale updates and Markdown escaping.');
 
 // HTTP adapter exercises real request serialization with deterministic mock responses.
 const requests=[],queue=[];
-const apiContext={AbortSignal,Date,console,fetch:async(url,options)=>{requests.push({url,options});const value=queue.shift();assert.ok(value,'Unexpected network request');return {ok:value.status<400,status:value.status,text:async()=>JSON.stringify(value.body)};}};
+const apiContext={AbortSignal,Date,console,crypto:globalThis.crypto,fetch:async(url,options)=>{requests.push({url,options});const value=queue.shift();assert.ok(value,'Unexpected network request');return {ok:value.status<400,status:value.status,text:async()=>JSON.stringify(value.body)};}};
 apiContext.window=apiContext;apiContext.CLOUD_CONFIG={url:'https://test.supabase.co',key:'sb_publishable_test'};
 vm.createContext(apiContext);vm.runInContext(await readFile('cloud.js','utf8'),apiContext);
 const api=apiContext.BlogCloud;
@@ -67,6 +77,9 @@ await api.login('writer@example.test','test-only');
 assert.equal(requests.at(-1).options.headers.Authorization,'Bearer test-jwt');
 queue.push({status:200,body:[]});await assert.rejects(api.save({id:'post-id',title:'Edited'},1),/其他窗口修改/);
 assert.ok(requests.at(-1).url.endsWith('id=eq.post-id&version=eq.1'));
+await assert.rejects(api.uploadImage({type:'image/svg+xml',size:1},'post'),/5 MB/);
+await assert.rejects(api.uploadImage({type:'image/png',size:6000000},'post'),/5 MB/);
+const imageBody={type:'image/png',size:120};queue.push({status:200,body:{Key:'ok'}});const mediaPath=await api.uploadImage(imageBody,'post');assert.match(mediaPath,/^post\/.+\.png$/);assert.equal(requests.at(-1).options.body,imageBody);assert.equal(requests.at(-1).options.headers['Content-Type'],'image/png');
 queue.push({status:200,body:null});await api.logout();await assert.rejects(api.save({id:'x'}),/请先登录/);
 queue.push({status:200,body:{access_token:'test-jwt',expires_in:3600,user:{id:'other'}}},{status:200,body:[]});
 await assert.rejects(api.login('other@example.test','test-only'),/尚未被配置/);
