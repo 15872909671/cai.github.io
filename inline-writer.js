@@ -41,11 +41,22 @@
     return `<option value="">不加入合集</option>`+remote.folders.filter(f=>f.collection===collection&&!blocked.has(f.id)).map(f=>`<option value="${E(f.id)}" ${f.id===value?'selected':''}>${E(F.ancestors(D,f.id).map(a=>a.name).join(' / '))}</option>`).join('');
   }
   function popup(html){dialog.innerHTML=html+`<p id="login-error" role="alert"></p>`;if(!dialog.open)dialog.showModal();dialog.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>dialog.close()));}
-  function login(afterLogin=null){
-    popup(`<form id="inline-login"><h2>登录</h2><label>邮箱<input name="email" type="email" autocomplete="username" required></label><label>密码<input name="password" type="password" autocomplete="current-password" required></label><div class="dialog-actions"><button class="primary" type="submit">登录</button><button type="button" data-close>取消</button></div></form>`);
-    dialog.querySelector('form').addEventListener('submit',e=>{e.preventDefault();const form=e.currentTarget;task(async()=>{try{const user=await C.login(form.elements.email.value.trim(),form.elements.password.value);userId=user?.id||null;}finally{form.elements.password.value='';}const loaded=await C.load(true);author=true;remote=loaded;account.textContent='退出登录';dialog.close();editor=null;apply();notice('已登录。');}).then(()=>{if(author)afterLogin?.();});});
+  function login(afterLogin=null,mode='login',email=''){
+    const registering=mode==='signup';
+    popup(`<form id="inline-login"><h2>${registering?'注册账号':'登录'}</h2><label>邮箱<input name="email" type="email" autocomplete="username" value="${E(email)}" required></label><label>密码<input name="password" type="password" autocomplete="${registering?'new-password':'current-password'}" ${registering?'minlength="8"':''} required></label>${registering?'<label>确认密码<input name="confirmPassword" type="password" autocomplete="new-password" minlength="8" required></label><p>密码至少 8 位。注册后请到邮箱完成验证。</p>':''}<div class="dialog-actions"><button class="primary" type="submit">${registering?'注册':'登录'}</button><button type="button" data-close>取消</button></div><div class="auth-links"><button type="button" data-auth-switch>${registering?'已有账号？登录':'没有账号？注册'}</button>${registering?'':'<button type="button" data-resend>重发验证邮件</button>'}</div></form>`);
+    const form=dialog.querySelector('form');
+    form.querySelector('[data-auth-switch]').onclick=()=>{if(!busy)login(afterLogin,registering?'login':'signup',form.elements.email.value.trim());};
+    form.querySelector('[data-resend]')?.addEventListener('click',()=>{if(!form.elements.email.reportValidity())return;task(async()=>{await C.resendConfirmation(form.elements.email.value.trim());dialog.querySelector('#login-error').textContent='若该邮箱需要验证，验证邮件将会发送，请检查收件箱和垃圾邮件。';});});
+    form.addEventListener('submit',e=>{e.preventDefault();if(!form.reportValidity())return;const email=form.elements.email.value.trim(),password=form.elements.password.value;
+      if(registering&&password!==form.elements.confirmPassword.value){dialog.querySelector('#login-error').textContent='两次输入的密码不一致。';return;}
+      task(async()=>{
+        if(registering){try{const result=await C.signup(email,password);login(afterLogin,'login',email);dialog.querySelector('#login-error').textContent=result.needsConfirmation?'请检查邮箱并完成验证，再回来登录。如果已有账号，请直接登录。':'注册请求已完成，请使用邮箱和密码登录。';}finally{form.elements.password.value='';form.elements.confirmPassword.value='';}return;}
+        let user;try{user=await C.login(email,password);}finally{form.elements.password.value='';}
+        const loaded=await C.load(user.isAuthor===true);userId=user.id;author=user.isAuthor===true;remote=loaded;account.textContent='退出登录';dialog.close();editor=null;apply();notice('已登录。');
+      }).then(()=>{if(userId&&!registering)afterLogin?.();});
+    });
   }
-  account.addEventListener('click',()=>{if(busy)return;if(!author){login();return;}if(!guard())return;task(async()=>{try{await C.logout();}finally{author=false;editor=null;dirty=false;userId=null;clearTimeout(draftTimer);account.textContent='登录';remote.posts=remote.posts.filter(p=>p.published);document.getElementById('search-results').innerHTML='';document.getElementById('search-input').value='';apply();}notice('已退出登录。');});});
+  account.addEventListener('click',()=>{if(busy)return;if(!userId){login();return;}if(!guard())return;task(async()=>{try{await C.logout();}finally{author=false;editor=null;dirty=false;userId=null;clearTimeout(draftTimer);account.textContent='登录 / 注册';remote.posts=remote.posts.filter(p=>p.published);document.getElementById('search-results').innerHTML='';document.getElementById('search-input').value='';apply();}notice('已退出登录。');});});
   function createPost(collection,folder){if(!guard())return;dialog.close();if(!main.querySelector('.file-pane')){history.replaceState(null,'','#/'+collection);lastHash=location.hash;window.refreshBlog();}editor={id:crypto.randomUUID(),collection,folder_id:folder||null,title:'',summary:'',body:'',metadata:{},published:false};dirty=false;renderEditor();}
   function createFolder(collection,parent){
     if(!guard())return;
@@ -108,7 +119,7 @@
     }
   }
   function compose(ctx){
-    if(!author){login(()=>compose(ctx));return;}
+    if(!userId){login(()=>compose(ctx));return;}if(!author){notice('当前账号已登录，发帖功能仅向作者开放。');return;}
     if(labels[ctx.collection])return createPost(ctx.collection,ctx.folder);
     popup(`<form><h2>发帖</h2><label>选择版块<select name="board">${Object.entries(labels).map(([key,name])=>`<option value="${key}">${E(name)}</option>`).join('')}</select></label><div class="dialog-actions"><button class="primary">开始写帖</button><button type="button" data-close>取消</button></div></form>`);
     dialog.querySelector('form').addEventListener('submit',e=>{e.preventDefault();createPost(e.currentTarget.elements.board.value,null);});
@@ -152,6 +163,8 @@
   window.InlineWriter={mount,allowNavigation,isAuthor:()=>author};
   addEventListener('beforeunload',e=>{backup();if(dirty||busy){e.preventDefault();e.returnValue='';}});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)backup();});
+  const authReturn=new URLSearchParams(location.hash.slice(1));
+  if(authReturn.has('access_token')||authReturn.has('error_description')){const failed=authReturn.has('error_description');history.replaceState(null,'',location.pathname+location.search+'#/');lastHash=location.hash;login();dialog.querySelector('#login-error').textContent=failed?'验证链接已失效，请重发验证邮件。':'请使用邮箱和密码登录。';}
   // No stale static content is shown after switching to the cloud source.
   if(window.CLOUD_CONFIG.enabled){for(const key of Object.values(F.keys))D[key]=[];D.folders=[];D.categories=['全部'];window.refreshBlog();notice('正在载入帖子……');task(async()=>{await reload();notice('');});}
 })();

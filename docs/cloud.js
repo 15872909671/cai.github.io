@@ -12,14 +12,20 @@
     }
     const response=await fetch(config.url+path,{method,headers:{apikey:config.key,...(body?{'Content-Type':'application/json'}:{}),...(auth?{Authorization:'Bearer '+session.access_token}:{}),...headers},body:body?(binary?body:JSON.stringify(body)):undefined,signal:AbortSignal.timeout(20000),cache:'no-store'});
     const text=await response.text();let result;try{result=text?JSON.parse(text):null;}catch{throw Error('服务返回了无法识别的响应。');}
-    if(!response.ok){const e=Error(result?.code==='PGRST205'?'写作数据库尚未初始化，请先运行 setup.sql。':response.status===401?'登录失败或已过期，请检查邮箱和密码。':response.status===403?'当前账号没有作者权限。':result?.code==='23505'?'该文件夹名称或帖子 ID 已存在。':result?.message||result?.msg||result?.error_description||'请求失败');e.status=response.status;throw e;}
+    if(!response.ok){const messages={signup_disabled:'注册暂未开放。',email_not_confirmed:'请先到邮箱完成验证。',email_address_not_authorized:'验证邮件暂时无法发送，请稍后重试。',over_email_send_rate_limit:'验证邮件发送过于频繁，请稍后重试。',over_request_rate_limit:'操作过于频繁，请稍后重试。',weak_password:'密码强度不足，请使用更长的密码。',user_already_exists:'该账号已存在，请直接登录。'};const e=Error(messages[result?.code]|| (result?.code==='PGRST205'?'写作数据库尚未初始化，请先运行 setup.sql。':response.status===401?'登录失败或已过期，请检查邮箱和密码。':response.status===403?'当前账号没有作者权限。':result?.code==='23505'?'该文件夹名称或帖子 ID 已存在。':result?.message||result?.msg||result?.error_description||'请求失败'));e.status=response.status;throw e;}
     return result;
   }
   function setSession(data){session={...data,expires_at:Date.now()+(data.expires_in-60)*1000};return session;}
   async function login(email,password){
     setSession(await request('/auth/v1/token?grant_type=password',{method:'POST',body:{email,password}}));
-    try{const rows=await request('/rest/v1/blog_authors?select=user_id&user_id=eq.'+encodeURIComponent(session.user.id),{auth:true});if(!rows.length)throw Error('账号已登录，但尚未被配置为博客作者。');return session.user;}catch(e){session=null;throw e;}
+    try{const rows=await request('/rest/v1/blog_authors?select=user_id&user_id=eq.'+encodeURIComponent(session.user.id),{auth:true});return {...session.user,isAuthor:rows.length>0};}catch(e){session=null;throw e;}
   }
+  const confirmationURL=()=>location.origin+location.pathname;
+  async function signup(email,password){
+    const result=await request('/auth/v1/signup?redirect_to='+encodeURIComponent(confirmationURL()),{method:'POST',body:{email,password}});
+    return {needsConfirmation:!result?.access_token};
+  }
+  async function resendConfirmation(email){return request('/auth/v1/resend?redirect_to='+encodeURIComponent(confirmationURL()),{method:'POST',body:{type:'signup',email}});}
   async function logout(){try{if(session)await request('/auth/v1/logout',{method:'POST',auth:true});}finally{session=null;}}
   async function rows(table,query='',auth=false){
     const all=[];let offset=0;
@@ -57,5 +63,5 @@
       }catch{img.alt=(img.alt||'图片')+'（暂时无法加载）';delete img.dataset.loading;}
     }));
   }
-  window.BlogCloud={request,login,logout,load,save,createFolder,apply,uploadImage,hydrateImages};
+  window.BlogCloud={request,login,signup,resendConfirmation,logout,load,save,createFolder,apply,uploadImage,hydrateImages};
 })();

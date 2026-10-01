@@ -65,7 +65,7 @@ console.log('PASS: PostgreSQL RLS, writer allowlist, draft isolation, publish/wi
 
 // HTTP adapter exercises real request serialization with deterministic mock responses.
 const requests=[],queue=[];
-const apiContext={AbortSignal,Date,console,crypto:globalThis.crypto,fetch:async(url,options)=>{requests.push({url,options});const value=queue.shift();assert.ok(value,'Unexpected network request');return {ok:value.status<400,status:value.status,text:async()=>JSON.stringify(value.body)};}};
+const apiContext={location:{origin:"https://knaios.github.io",pathname:"/cai.github.io/"},AbortSignal,Date,console,crypto:globalThis.crypto,fetch:async(url,options)=>{requests.push({url,options});const value=queue.shift();assert.ok(value,'Unexpected network request');return {ok:value.status<400,status:value.status,text:async()=>JSON.stringify(value.body)};}};
 apiContext.window=apiContext;apiContext.CLOUD_CONFIG={url:'https://test.supabase.co',key:'sb_publishable_test'};
 vm.createContext(apiContext);vm.runInContext(await readFile('cloud.js','utf8'),apiContext);
 const api=apiContext.BlogCloud;
@@ -82,7 +82,10 @@ await assert.rejects(api.uploadImage({type:'image/png',size:6000000},'post'),/5 
 const imageBody={type:'image/png',size:120};queue.push({status:200,body:{Key:'ok'}});const mediaPath=await api.uploadImage(imageBody,'post');assert.match(mediaPath,/^post\/.+\.png$/);assert.equal(requests.at(-1).options.body,imageBody);assert.equal(requests.at(-1).options.headers['Content-Type'],'image/png');
 queue.push({status:200,body:null});await api.logout();await assert.rejects(api.save({id:'x'}),/请先登录/);
 queue.push({status:200,body:{access_token:'test-jwt',expires_in:3600,user:{id:'other'}}},{status:200,body:[]});
-await assert.rejects(api.login('other@example.test','test-only'),/尚未被配置/);
+assert.equal((await api.login('other@example.test','test-only')).isAuthor,false);
 queue.push({status:404,body:{code:'PGRST205'}});await assert.rejects(api.request('/missing'),/尚未初始化/);
+queue.push({status:200,body:{user:{id:'new'}}});assert.equal((await api.signup('reader@example.test','test-pass')).needsConfirmation,true);assert.ok(requests.at(-1).url.includes('redirect_to=https%3A%2F%2Fknaios.github.io%2Fcai.github.io%2F'));assert.deepEqual(JSON.parse(requests.at(-1).options.body),{email:'reader@example.test',password:'test-pass'});
+queue.push({status:422,body:{code:'email_address_not_authorized'}});await assert.rejects(api.signup('reader@example.test','test-pass'),/无法发送/);
+queue.push({status:200,body:{}});await api.resendConfirmation('reader@example.test');assert.equal(JSON.parse(requests.at(-1).options.body).type,'signup');
 assert.equal(queue.length,0);
 console.log('PASS: public-read filtering, authentication, writer membership, version filtering, logout and setup errors.');

@@ -59,3 +59,9 @@ GitHub Pages 使用 main 分支。根目录和 docs/ 均包含同一份生成站
 - 作品编辑提供 GitHub、演示地址和技术栈；“全部帖子”可跨栏目浏览并分页。
 
 验证：`node test.mjs`、`node inline-test.mjs`、`node cloud-test.mjs`。数据库测试覆盖作者与访客权限、图片草稿隔离、合集循环移动和并发版本冲突；编辑测试覆盖草稿恢复与作品元数据。线上作者发布仍需登录后验证。
+
+## 访客注册
+
+顶栏“登录 / 注册”提供邮箱注册、重复密码校验、验证邮件重发。普通用户可登录，作者权限仍由 blog_authors 决定，注册不会自动赋予写入权限。
+
+Supabase Authentication 设置需要启用邮箱注册及邮箱确认；URL Configuration 的 Site URL 和允许的 Redirect URLs 均设置为 `https://knaios.github.io/cai.github.io/`。若要向非项目成员发送验证邮件，须配置自定义 SMTP（默认邮件服务仅限项目成员）。前端不会关闭邮箱验证，也不会保存密码。注册邮件实际投递需使用可收信邮箱进行端到端验收。
