@@ -165,13 +165,22 @@
     const section=new URLSearchParams(location.hash.split('?')[1]||'').get('section');
     if(section!==null)(document.getElementById('reading-'+section)||document.getElementById('section-'+section))?.scrollIntoView();else window.scrollTo(0,0);
   }
-  const dialog=document.getElementById('search-dialog'),input=document.getElementById('search-input'),results=document.getElementById('search-results');
-  function searchIndex(){return allDocs();}
-  function search(){const q=input.value.trim().toLowerCase();if(!q){results.innerHTML='<div class="empty">输入关键词搜索。</div>';return;}const words=q.split(/\s+/);const found=searchIndex().filter(a=>words.every(w=>JSON.stringify(a).toLowerCase().includes(w)));results.innerHTML=found.length?`<p class="search-hint">找到 ${found.length} 条内容</p>`+found.map(a=>`<a class="search-result" href="${routeFor(a.type,a.id)}"><span class="entry-top">${E(a.collection)}${a.demo===true?' · 示例模板':''}</span><strong>${E(a.title)}</strong><p>${E(a.summary)}</p></a>`).join(''):empty('没有找到相关内容','试试更短的词，或搜索 Go、Linux。');}
-  function openSearch(){if(!dialog.open)dialog.showModal();input.value='';search();input.focus();}
-  document.getElementById('search-open').addEventListener('click',openSearch);document.getElementById('search-close').addEventListener('click',()=>dialog.close());input.addEventListener('input',search);
-  dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();}});
-  results.addEventListener('click',e=>{if(e.target.closest('a'))dialog.close();});
+  const searchForm=document.getElementById('header-search'),input=document.getElementById('search-input'),results=document.getElementById('search-results');
+  function closeSearch(){results.hidden=true;input.setAttribute('aria-expanded','false');}
+  function search(){
+    const q=input.value.trim().toLowerCase();if(!q){results.innerHTML='';closeSearch();return;}
+    const words=q.split(/\s+/),found=allDocs().filter(a=>a.published!==false&&words.every(w=>[a.title,a.summary,a.collection,a.category,...(a.tags||[]),a.markdown,...(a.sections||[]).flatMap(s=>[s.title,s.text,s.code,...(s.list||[])])].filter(Boolean).join(' ').toLowerCase().includes(w)));
+    results.innerHTML=found.length?`<p class="search-hint">${found.length} 条结果</p>`+found.map(a=>`<a class="search-result" href="${routeFor(a.type,a.id)}"><span class="entry-top">${E(a.collection)}${a.demo===true?' · 示例模板':''}</span><strong>${E(a.title)}</strong><p>${E(a.summary)}</p></a>`).join(''):'<p class="search-hint">没有找到相关帖子</p>';
+    results.hidden=false;input.setAttribute('aria-expanded','true');document.getElementById('nav').megaSet?.(false);
+  }
+  function openSearch(){input.focus();search();}
+  document.getElementById('search-open').addEventListener('click',openSearch);
+  input.addEventListener('input',search);input.addEventListener('focus',search);
+  searchForm.addEventListener('submit',e=>{e.preventDefault();search();const first=results.querySelector('a');if(first){location.hash=first.getAttribute('href');closeSearch();}});
+  searchForm.addEventListener('keydown',e=>{if(e.key==='Escape'){closeSearch();input.focus();closeSearch();e.stopPropagation();}if(e.key==='ArrowDown'&&e.target===input){const first=results.querySelector('a');if(first){e.preventDefault();first.focus();}}});
+  searchForm.addEventListener('focusout',e=>{if(!searchForm.contains(e.relatedTarget))closeSearch();});
+  results.addEventListener('click',e=>{if(e.target.closest('a'))closeSearch();});
+  document.addEventListener('click',e=>{if(!e.target.closest('#header-search'))closeSearch();});
   document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();openSearch();}});
   document.getElementById('menu-toggle').addEventListener('click',e=>{const open=document.getElementById('nav').classList.toggle('open');e.currentTarget.setAttribute('aria-expanded',String(open));});
   document.querySelector('.skip')?.addEventListener('click',e=>{e.preventDefault();main.focus();main.scrollIntoView();});

@@ -32,7 +32,7 @@ assert.doesNotMatch(route('#/knowledge?q=Linux').split('<section class="forum-fe
 const goView=route('#/knowledge/Go').split('<div class="file-pane">')[1];assert.ok(goView.includes('Go 并发帖子'));assert.ok(!goView.includes('读懂 Raft'));
 assert.equal(context.BLOG.companies,undefined);for(const path of ['companies','company/tencent','project/raft-lab','project/digital-study'])assert.match(route('#/'+path),/这一页还没有写下/);
 assert.doesNotMatch(route('#/'),/企业集|motion-toggle|数字书房|实验室/);
-node('search-open').events.click();node('search-input').value='Raft';node('search-input').events.input();assert.match(node('search-results').innerHTML,/读懂 Raft/);
+node('search-open').events.click();node('search-input').value='Raft';node('search-input').events.input();assert.match(node('search-results').innerHTML,/读懂 Raft/);node('search-input').value='Go';node('search-input').events.input();assert.doesNotMatch(node('search-results').innerHTML,/数据库学习清单/);node('search-input').value='';node('search-input').events.input();assert.equal(node('search-results').hidden,true);
 assert.match(route('#/article/missing'),/这一页还没有写下/);assert.match(route('#/knowledge/%ZZ'),/这一页还没有写下/);
 context.BLOG.articles[0].title='<img src=x onerror=alert(1)>';assert.ok(route('#/article/'+context.BLOG.articles[0].id).includes('&lt;img'));assert.ok(!node('main').innerHTML.includes('<img src=x'));
 assert.match(route('#/career'),/作品集合/);assert.match(route('#/essays'),/还没有帖子/);
@@ -51,5 +51,5 @@ assert.equal((nav.innerHTML.match(/class="mega-column"/g)||[]).length,7);
 for(const title of ['主页','技术','工具','相册','随笔','留言'])assert.ok(nav.innerHTML.includes(title));
 context.BLOG.articles.push({id:'private-draft',title:'PRIVATE_DRAFT_SENTINEL',published:false,date:'2026-10-01',folder_id:'knowledge/Go'});route('#/');assert.ok(!node('nav').innerHTML.includes('PRIVATE_DRAFT_SENTINEL'));context.BLOG.articles.pop();
 assert.match(route('#/photos'),/相册/);assert.match(route('#/guestbook'),/留言/);assert.match(route('#/tools'),/工具/);
-for(const file of ['index.html','app.js','content.js','styles.css','folders.js','admin.html','inline-writer.js','inline-writer.css','forum.css','reference-theme.css','theme.js','landscape.svg','mega-nav.css','reading-writing.css','cloud-config.js','cloud.js','markdown.js'])assert.equal(await readFile(file,'utf8'),await readFile('docs/'+file,'utf8'));
+for(const file of ['index.html','app.js','content.js','styles.css','folders.js','admin.html','inline-writer.js','inline-writer.css','forum.css','reference-theme.css','theme.js','landscape.svg','mega-nav.css','reading-writing.css','header-search.css','cloud-config.js','cloud.js','markdown.js'])assert.equal(await readFile(file,'utf8'),await readFile('docs/'+file,'utf8'));
 console.log('PASS: forum routes, all-post lists, album views, scoped search, nested albums, escaping, navigation and deployment parity.');
