@@ -285,17 +285,16 @@ window.BLOG = {
       "collection": "knowledge"
     },
     {
+      "id": "projects",
+      "title": "作品集",
+      "href": "#/projects",
+      "collection": "projects"
+    },
+    {
       "id": "tools",
       "title": "工具",
       "href": "#/tools",
-      "children": [
-        {
-          "id": "projects",
-          "title": "作品集合",
-          "href": "#/projects",
-          "collection": "projects"
-        }
-      ]
+      "children": []
     },
     {
       "id": "photos",
