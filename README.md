@@ -65,3 +65,11 @@ GitHub Pages 使用 main 分支。根目录和 docs/ 均包含同一份生成站
 顶栏“登录 / 注册”提供邮箱注册、重复密码校验、验证邮件重发。普通用户可登录，作者权限仍由 blog_authors 决定，注册不会自动赋予写入权限。
 
 Supabase Authentication 设置需要启用邮箱注册及邮箱确认；URL Configuration 的 Site URL 和允许的 Redirect URLs 均设置为 `https://knaios.github.io/cai.github.io/`。若要向非项目成员发送验证邮件，须配置自定义 SMTP（默认邮件服务仅限项目成员）。前端不会关闭邮箱验证，也不会保存密码。注册邮件实际投递需使用可收信邮箱进行端到端验收。
+
+## 验证码与公开 ID 升级
+
+1. 在 SQL Editor 执行 `supabase/registration.sql`，建立公开 ID 唯一约束和注册状态查询。公开 ID 为 3–24 位英文字母、数字或下划线，不区分大小写；不会公开邮箱。
+2. 在 Authentication 的 Email Templates → Confirm signup 中，使用 `supabase/confirmation-email.html` 全文替换正文。`{{ .Token }}` 显示真实验证码，不是写死的测试数字。保持 Confirm email 开启。
+3. 配置可向访客投递邮件的自定义 SMTP。验证码的长度、过期时间和服务器发送频率限制遵循 Supabase 配置。
+
+流程：邮箱和密码注册 → 收取验证码 → 验证 → 认领公开 ID → 登录。已确认的邮箱会明确提示已注册；未确认邮箱可以重试。注册状态接口仅返回两个布尔值，因此能判断邮箱是否注册（按产品要求提供），不返回邮箱列表。ID 认领只能由已验证邮箱的本人执行，唯一约束处理并发抢注，注册本身不授予作者权限。

@@ -12,19 +12,26 @@
     }
     const response=await fetch(config.url+path,{method,headers:{apikey:config.key,...(body?{'Content-Type':'application/json'}:{}),...(auth?{Authorization:'Bearer '+session.access_token}:{}),...headers},body:body?(binary?body:JSON.stringify(body)):undefined,signal:AbortSignal.timeout(20000),cache:'no-store'});
     const text=await response.text();let result;try{result=text?JSON.parse(text):null;}catch{throw Error('服务返回了无法识别的响应。');}
-    if(!response.ok){const messages={signup_disabled:'注册暂未开放。',email_not_confirmed:'请先到邮箱完成验证。',email_address_not_authorized:'验证邮件暂时无法发送，请稍后重试。',over_email_send_rate_limit:'验证邮件发送过于频繁，请稍后重试。',over_request_rate_limit:'操作过于频繁，请稍后重试。',weak_password:'密码强度不足，请使用更长的密码。',user_already_exists:'该账号已存在，请直接登录。'};const e=Error(messages[result?.code]|| (result?.code==='PGRST205'?'写作数据库尚未初始化，请先运行 setup.sql。':response.status===401?'登录失败或已过期，请检查邮箱和密码。':response.status===403?'当前账号没有作者权限。':result?.code==='23505'?'该文件夹名称或帖子 ID 已存在。':result?.message||result?.msg||result?.error_description||'请求失败'));e.status=response.status;throw e;}
+    if(!response.ok){const messages={otp_expired:'验证码无效或已过期，请重新获取。',signup_disabled:'注册暂未开放。',email_not_confirmed:'请先到邮箱完成验证。',email_address_not_authorized:'验证邮件暂时无法发送，请稍后重试。',over_email_send_rate_limit:'验证邮件发送过于频繁，请稍后重试。',over_request_rate_limit:'操作过于频繁，请稍后重试。',weak_password:'密码强度不足，请使用更长的密码。',user_already_exists:'该账号已存在，请直接登录。'};const e=Error(messages[result?.code]|| (result?.code==='PGRST205'?'写作数据库尚未初始化，请先运行 setup.sql。':response.status===401?'登录失败或已过期，请检查邮箱和密码。':response.status===403?'当前账号没有作者权限。':result?.code==='23505'?'名称或 ID 已被使用，请换一个。':result?.message||result?.msg||result?.error_description||'请求失败'));e.status=response.status;throw e;}
     return result;
   }
   function setSession(data){session={...data,expires_at:Date.now()+(data.expires_in-60)*1000};return session;}
   async function login(email,password){
     setSession(await request('/auth/v1/token?grant_type=password',{method:'POST',body:{email,password}}));
-    try{const rows=await request('/rest/v1/blog_authors?select=user_id&user_id=eq.'+encodeURIComponent(session.user.id),{auth:true});return {...session.user,isAuthor:rows.length>0};}catch(e){session=null;throw e;}
+    try{const rows=await request('/rest/v1/blog_authors?select=user_id&user_id=eq.'+encodeURIComponent(session.user.id),{auth:true});let username='';try{const profiles=await request('/rest/v1/blog_profiles?select=username&user_id=eq.'+encodeURIComponent(session.user.id),{auth:true});username=profiles[0]?.username||'';}catch(e){if(e.status!==404)throw e;}return {...session.user,isAuthor:rows.length>0,username};}catch(e){session=null;throw e;}
   }
   const confirmationURL=()=>location.origin+location.pathname;
-  async function signup(email,password){
-    const result=await request('/auth/v1/signup?redirect_to='+encodeURIComponent(confirmationURL()),{method:'POST',body:{email,password}});
-    return {needsConfirmation:!result?.access_token};
+  async function signup(email,password,username){
+    const status=await request('/rest/v1/rpc/blog_registration_status',{method:'POST',body:{email_address:email,public_name:username}});
+    if(status.registered)throw Error('该邮箱已注册，请直接登录。');
+    if(status.nameTaken)throw Error('这个公开 ID 已被使用，请换一个。');
+    const result=await request('/auth/v1/signup?redirect_to='+encodeURIComponent(confirmationURL()),{method:'POST',body:{email,password,data:{username}}});
+    if(result?.user?.identities?.length===0)throw Error('该邮箱已注册，请直接登录。');
+    if(result?.access_token){setSession(result);return {needsConfirmation:false};}
+    return {needsConfirmation:true};
   }
+  async function verifyRegistration(email,token){setSession(await request('/auth/v1/verify',{method:'POST',body:{email,token,type:'signup'}}));}
+  async function claimUsername(username){return request('/rest/v1/rpc/blog_claim_username',{method:'POST',body:{public_name:username},auth:true});}
   async function resendConfirmation(email){return request('/auth/v1/resend?redirect_to='+encodeURIComponent(confirmationURL()),{method:'POST',body:{type:'signup',email}});}
   async function logout(){try{if(session)await request('/auth/v1/logout',{method:'POST',auth:true});}finally{session=null;}}
   async function rows(table,query='',auth=false){
@@ -63,5 +70,5 @@
       }catch{img.alt=(img.alt||'图片')+'（暂时无法加载）';delete img.dataset.loading;}
     }));
   }
-  window.BlogCloud={request,login,signup,resendConfirmation,logout,load,save,createFolder,apply,uploadImage,hydrateImages};
+  window.BlogCloud={request,login,signup,verifyRegistration,claimUsername,resendConfirmation,logout,load,save,createFolder,apply,uploadImage,hydrateImages};
 })();
