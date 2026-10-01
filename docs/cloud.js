@@ -31,6 +31,7 @@
     return {needsConfirmation:true};
   }
   async function verifyRegistration(email,token){setSession(await request('/auth/v1/verify',{method:'POST',body:{email,token,type:'signup'}}));}
+  async function setRegistrationPassword(password){return request('/auth/v1/user',{method:'PUT',auth:true,body:{password}});}
   async function claimUsername(username){return request('/rest/v1/rpc/blog_claim_username',{method:'POST',body:{public_name:username},auth:true});}
   async function resendConfirmation(email){return request('/auth/v1/resend?redirect_to='+encodeURIComponent(confirmationURL()),{method:'POST',body:{type:'signup',email}});}
   async function logout(){try{if(session)await request('/auth/v1/logout',{method:'POST',auth:true});}finally{session=null;}}
@@ -70,5 +71,5 @@
       }catch{img.alt=(img.alt||'图片')+'（暂时无法加载）';delete img.dataset.loading;}
     }));
   }
-  window.BlogCloud={request,login,signup,verifyRegistration,claimUsername,resendConfirmation,logout,load,save,createFolder,apply,uploadImage,hydrateImages};
+  window.BlogCloud={request,login,signup,setRegistrationPassword,verifyRegistration,claimUsername,resendConfirmation,logout,load,save,createFolder,apply,uploadImage,hydrateImages};
 })();

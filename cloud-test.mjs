@@ -95,6 +95,7 @@ queue.push({status:200,body:{registered:false,nameTaken:true}});await assert.rej
 queue.push({status:200,body:{registered:false,nameTaken:false}},{status:200,body:{user:{id:'new',identities:[{}]}}});assert.equal((await api.signup('new@example.test','test-pass','reader')).needsConfirmation,true);assert.equal(JSON.parse(requests.at(-1).options.body).data.username,'reader');
 queue.push({status:403,body:{code:'otp_expired'}});await assert.rejects(api.verifyRegistration('new@example.test','123456'),/验证码/);
 queue.push({status:200,body:{access_token:'verified',expires_in:3600,user:{id:'new'}}});await api.verifyRegistration('new@example.test','123456');assert.equal(JSON.parse(requests.at(-1).options.body).type,'signup');
+queue.push({status:200,body:{}});await api.setRegistrationPassword('chosen-password');assert.equal(requests.at(-1).options.method,'PUT');assert.equal(JSON.parse(requests.at(-1).options.body).password,'chosen-password');
 queue.push({status:200,body:'reader'});assert.equal(await api.claimUsername('reader'),'reader');assert.equal(requests.at(-1).options.headers.Authorization,'Bearer verified');
 queue.push({status:200,body:{}});await api.resendConfirmation('new@example.test');assert.equal(JSON.parse(requests.at(-1).options.body).type,'signup');
 assert.equal(queue.length,0);
