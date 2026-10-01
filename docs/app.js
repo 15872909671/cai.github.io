@@ -10,49 +10,48 @@
   const crumb=items=>`<div class="breadcrumb"><a href="#/">首页</a>${items.map(([name,url])=>`<span>/</span>${url?`<a href="${safeURL(url)}">${E(name)}</a>`:`<span>${E(name)}</span>`}`).join('')}</div>`;
   const head=(en,title,desc)=>`<div class="page-head"><h1>${E(title)}</h1></div>`;
   const routeFor=(type,id)=>`#/${type}/${encodeURIComponent(id)}`;
-  const entry=(a,type)=>`<a class="entry file-entry" href="${routeFor(type,a.id)}"><span class="file-symbol" aria-hidden="true"></span><div class="file-content"><h3>${E(a.title)}</h3><p>${E(a.summary)}</p><div class="entry-top"><span>${E(a.category||a.company||a.status||'帖子')}</span><span>${E(a.date)}</span>${a.demo===true?badge(a):''}</div></div><span class="file-open" aria-hidden="true">→</span></a>`;
+  const entry=(a,type)=>`<a class="entry file-entry" href="${routeFor(type,a.id)}"><span class="file-symbol" aria-hidden="true"></span><div class="file-content"><h3>${E(a.title)}</h3><p>${E(a.summary)}</p><div class="entry-top"><span>${E(a.category||a.company||a.status||'帖子')}</span><span>${E(a.date)}</span>${a.demo===true||a.published===false?badge(a):''}</div></div><span class="file-open" aria-hidden="true">→</span></a>`;
   const navNodes=nodes=>nodes.flatMap(n=>[n,...navNodes(n.children||[])]);
   const containsSection=(node,key)=>node.id===key||(node.children||[]).some(n=>containsSection(n,key));
   function navigationMarkup(nodes,selected){return nodes.map(n=>`<div class="nav-item"><a href="${safeURL(n.href)}" ${containsSection(n,selected)?'class="active"':''} ${n.id===selected?'aria-current="page"':''}>${E(n.title)}</a>${n.children?.length?`<details class="nav-disclosure"><summary aria-label="展开${E(n.title)}子栏目">⌄</summary><div class="nav-submenu">${navigationMarkup(n.children,selected)}</div></details>`:''}</div>`).join('');}
-  function folderPage(node){return crumb([[node.title]])+head('',node.title,'')+`<section class="file-list"><div class="list-heading"><span>文件夹</span><span>${node.children.length} 项</span></div>${node.children.map(n=>`<a class="folder-list-row" href="${safeURL(n.href)}"><span class="folder-symbol" aria-hidden="true"></span><span>${E(n.title)}</span><span class="folder-row-count">›</span></a>`).join('')}</section>`;}
+  function folderPage(node){return crumb([[node.title]])+head('',node.title,'')+`<section class="file-list"><div class="list-heading"><span>版块</span><span>${node.children.length} 项</span></div>${node.children.map(n=>`<a class="folder-list-row" href="${safeURL(n.href)}"><span class="folder-symbol" aria-hidden="true"></span><span>${E(n.title)}</span><span class="folder-row-count">›</span></a>`).join('')}</section>`;}
+  const publicDocs=()=>allDocs().filter(p=>p.published!==false).sort((a,b)=>b.date.localeCompare(a.date));
+  function profileCard(){return `<section class="profile-card"><div class="profile-cover"></div><div class="profile-avatar" aria-hidden="true">C</div><h2>${E(D.profile.name)}</h2><div class="profile-stats"><a href="#/knowledge"><strong>${publicDocs().length}</strong><span>帖子</span></a><a href="#/albums"><strong>${D.folders.length}</strong><span>合集</span></a><a href="#/resume"><strong>↗</strong><span>简历</span></a></div><a class="profile-github" href="${safeURL(D.profile.github)}" target="_blank" rel="noopener noreferrer">GitHub ↗</a></section>`;}
   function home(){
-    const homeKeys=['knowledge','career','essays'];
-    const counts=[`${D.articles.length} 篇帖子`,'2 个文件夹',`${D.essays.length} 篇帖子`];
-    return `<div class="portal"><section class="portal-intro"><div class="intro-copy"><h1>内容总览</h1></div><div class="research-stage"><canvas id="research-field" aria-hidden="true"></canvas></div></section><section class="portal-sections" aria-label="三个集合">${homeKeys.map((k,i)=>`<a href="#/${k}"><div class="portal-section-title"><h2>${labels[k]}</h2><span aria-hidden="true">↗</span></div><span class="section-count">${counts[i]}</span></a>`).join('')}</section><div class="portal-content"><section class="portal-feed"><div class="section-heading"><h2>最新帖子</h2><a class="text-link" href="#/knowledge">全部帖子 ↗</a></div><div class="topic-links" aria-label="技术分类">${D.categories.filter(c=>c!=='全部').map(c=>`<a href="#/knowledge/${encodeURIComponent(c)}">${E(c)}</a>`).join('')}</div>${D.articles.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(a=>entry(a,'article')).join('')}</section><aside class="portal-aside"><section><div class="section-heading"><h2>作品集合</h2><a class="text-link" href="#/projects">全部 ↗</a></div>${D.projects.map(p=>entry(p,'project')).join('')||'<p class="folder-empty">暂无帖子</p>'}</section><section class="portal-interviews"><div class="section-heading"><h2>面经资料</h2><a class="text-link" href="#/interviews">全部 ↗</a></div>${D.interviews.map(a=>`<a class="compact-record" href="${routeFor('interview',a.id)}"><span class="record-type">${a.demo===true?'示例模板':'帖子'}</span><span>${E(a.title)}</span></a>`).join('')}</section></aside></div></div>`;
+    const posts=publicDocs();
+    return `<section class="reference-hero"><div class="hero-heading"><h1>CAI</h1><div class="hero-links"><a href="#/knowledge">技术博客</a><a href="#/career">职业合集</a><a href="#/essays">随笔</a></div></div><button type="button" class="hero-scroll" id="browse-posts" aria-label="浏览帖子">⌄</button><svg class="hero-wave" viewBox="0 0 1440 100" preserveAspectRatio="none" aria-hidden="true"><path d="M0 35 Q360 100 720 40 T1440 45 V100 H0Z" fill="currentColor" opacity=".3"/><path d="M0 55 Q360 10 720 65 T1440 35 V100 H0Z" fill="currentColor" opacity=".5"/><path d="M0 70 Q360 35 720 72 T1440 65 V100 H0Z" fill="currentColor"/></svg></section><div class="reference-layout" id="home-posts"><section class="reference-feed"><div class="feed-heading"><h2>最新帖子</h2><a href="#/knowledge">查看全部 →</a></div>${posts.map((p,i)=>`<a class="picture-post ${i%2?'picture-reverse':''}" href="${routeFor(p.type,p.id)}"><div class="post-cover cover-${i%4}" aria-hidden="true"><span>${E(p.category||p.collection)}</span></div><div class="picture-copy"><h2>${E(p.title)}</h2><div class="picture-meta">${E(p.date)} · ${E(p.collection)}${p.demo===true?' · 示例模板':''}</div><p>${E(p.summary)}</p><span class="continue-reading">阅读全文 →</span></div></a>`).join('')||empty('还没有帖子','')}</section><aside class="reference-sidebar">${profileCard()}<section class="side-card"><h2>版块</h2>${['knowledge','projects','interviews','essays'].map(k=>`<a href="#/${k}">${E(labels[k])}<span>›</span></a>`).join('')}</section><section class="side-card"><h2>合集</h2>${D.folders.filter(f=>!f.parent_id).map(f=>`<a href="${folderURL(f)}">${E(f.name)}<span>›</span></a>`).join('')||'<p>暂无合集</p>'}</section></aside></div>`;
   }
   const folderURL=f=>'#/folder/'+encodeURIComponent(f.id);
   function directory(collection,id=null){
     if(!F.keys[collection])return notFound();
     const current=id?D.folders.find(f=>f.id===id&&f.collection===collection):null;
     if(id&&!current)return notFound();
-    const folders=F.children(D,collection,id),posts=F.posts(D,collection,id);
+    const params=new URLSearchParams(location.hash.split('?')[1]||''),author=window.InlineWriter?.isAuthor()===true;
+    const view=params.get('view')==='albums'?'albums':params.get('view')==='drafts'&&author?'drafts':'posts';
+    const query=(params.get('q')||'').trim(),base=id?folderURL(current):'#/'+collection;
+    const folders=F.children(D,collection,id),all=D[F.keys[collection]];
+    const publicPosts=all.filter(p=>p.published!==false);
+    let posts=all.filter(p=>(!id||p.folder_id===id)&&(view==='drafts'?p.published===false:p.published!==false)&&(!query||(p.title+' '+(p.summary||'')).toLowerCase().includes(query.toLowerCase()))).sort((a,b)=>b.date.localeCompare(a.date)||a.title.localeCompare(b.title));
+    const pages=Math.max(1,Math.ceil(posts.length/20)),page=Math.min(pages,Math.max(1,Number(params.get('page'))||1));
     const trail=F.ancestors(D,id).map(f=>[f.name,f.id===id?null:folderURL(f)]);
-    return crumb([[labels[collection],id?'#/'+collection:null],...trail])+head('',current?.name||labels[collection],'')+`<section class="file-list"><div class="list-heading"><span>文件夹与帖子</span><span>${folders.length+posts.length} 项</span></div>${folders.map(f=>`<a class="folder-list-row" href="${folderURL(f)}"><span class="folder-symbol" aria-hidden="true"></span><span>${E(f.name)}</span><span class="folder-row-count">›</span></a>`).join('')}${posts.map(p=>entry(p,F.types[collection])).join('')}${!folders.length&&!posts.length?empty('这个文件夹还没有帖子',''):''}</section>`;
+    const albumCards=folders.map(f=>`<a class="album-card" href="${folderURL(f)}"><span class="album-icon" aria-hidden="true">▤</span><strong>${E(f.name)}</strong><span>${publicPosts.filter(p=>p.folder_id===f.id).length} 篇帖子</span></a>`).join('');
+    return crumb([[labels[collection],id?'#/'+collection:null],...trail])+`<section class="board-head"><div><span class="board-kicker">${id?'帖子合集':'讨论版块'}</span><h1>${E(current?.name||labels[collection])}</h1><p>${id?publicPosts.filter(p=>p.folder_id===id).length:publicPosts.length} 篇帖子</p></div><button type="button" class="forum-primary" data-compose>发帖</button></section><nav class="board-tabs" aria-label="帖子筛选"><a href="${base}" ${view==='posts'?'aria-current="page"':''}>${id?'合集帖子':'全部帖子'}</a><a href="${base}?view=albums" ${view==='albums'?'aria-current="page"':''}>${id?'子合集':'合集'}</a>${author?`<a href="${base}?view=drafts" ${view==='drafts'?'aria-current="page"':''}>草稿</a>`:''}</nav>${view==='albums'?`<section class="album-panel"><div class="album-heading"><h2>${id?'子合集':'全部合集'}</h2>${author?'<button type="button" class="forum-secondary" data-new-album>新建合集</button>':''}</div><div class="album-grid">${albumCards||'<p class="folder-empty">还没有合集</p>'}</div></section>`:`<section class="forum-feed"><form id="board-search" class="board-search"><label class="sr-only" for="board-query">搜索当前版块</label><input id="board-query" name="q" value="${E(query)}" placeholder="搜索帖子标题"><button type="submit">搜索</button><span>最新发布 · ${posts.length} 篇</span></form>${posts.slice((page-1)*20,page*20).map(p=>entry(p,F.types[collection])).join('')||empty(view==='drafts'?'还没有草稿':'还没有帖子','')}${pages>1?`<nav class="forum-pagination" aria-label="分页">${Array.from({length:pages},(_,i)=>`<a href="${base}?view=${view}&q=${encodeURIComponent(query)}&page=${i+1}" ${i+1===page?'aria-current="page"':''}>${i+1}</a>`).join('')}</nav>`:''}</section>`}`;
   }
+  function albumIndex(){return crumb([['合集']])+head('','合集','')+`<div class="album-grid">${D.folders.filter(f=>!f.parent_id).map(f=>`<a class="album-card" href="${folderURL(f)}"><span class="album-icon" aria-hidden="true">▤</span><strong>${E(f.name)}</strong><span>${E(labels[f.collection])} · ${(D[F.keys[f.collection]]||[]).filter(p=>p.folder_id===f.id&&p.published!==false).length} 篇帖子</span></a>`).join('')||empty('还没有合集','')}</div>`;}
   function knowledge(category='全部'){
     if(category==='全部')return directory('knowledge');
     const folder=D.folders.find(f=>f.collection==='knowledge'&&!f.parent_id&&f.name===category);
     return folder?directory('knowledge',folder.id):notFound();
   }
-  const treeState=new Map();
   function fileTree(page,id){
     const selected=page==='folder'?D.folders.find(f=>f.id===id)?.collection:{article:'knowledge',project:'projects',interview:'interviews',essay:'essays'}[page]||page;
-    const activePost=allDocs().find(a=>a.type===page&&a.id===id);
-    const activeFolder=page==='folder'?id:activePost?.folder_id||(page==='knowledge'&&id?'knowledge/'+id:null);
-    const ancestry=F.ancestors(D,activeFolder).map(f=>f.id);
-    const file=(a,type)=>`<li><a class="tree-file ${page===type&&id===a.id?'selected':''}" href="${routeFor(type,a.id)}" ${page===type&&id===a.id?'aria-current="page"':''}><span class="file-symbol" aria-hidden="true"></span><span>${E(a.title)}${a.published===false?'<small class="draft-mark">草稿</small>':''}</span></a></li>`;
-    const branch=(key,title,url,children,reveal,defaultOpen=false)=>`<li><details data-tree-key="${E(key)}" ${treeState.get(key)??(reveal||defaultOpen)?'open':''}><summary><span class="tree-caret" aria-hidden="true">›</span><span class="folder-symbol" aria-hidden="true"></span><span class="tree-folder-name">${E(title)}</span><a class="tree-open" href="${safeURL(url)}" aria-label="打开${E(title)}文件夹">↗</a></summary><ul>${children||'<li class="tree-empty">空文件夹</li>'}</ul></details></li>`;
-    const folderNodes=(collection,parent=null)=>F.children(D,collection,parent).map(f=>branch(f.id,f.name,folderURL(f),folderNodes(collection,f.id),ancestry.includes(f.id),page===collection&&!id)).join('')+F.posts(D,collection,parent).map(p=>file(p,F.types[collection])).join('');
-    const treeNodes=nodes=>nodes.map(n=>{
-      let children=n.children?.length?treeNodes(n.children):F.keys[n.id]?folderNodes(n.id):'';
-      return branch(n.id,n.title,n.href,children,containsSection(n,selected));
-    }).join('');
-    return `<aside class="file-tree" id="directory"><div class="tree-toolbar"><span>文件树</span><div><button type="button" id="tree-expand">全部展开</button><button type="button" id="tree-collapse">全部收起</button></div></div><nav aria-label="文件树"><ul class="tree-root">${treeNodes(navNodes(D.navigation).filter(n=>n.id===selected))}</ul></nav></aside>`;
+    const activePost=allDocs().find(a=>a.type===page&&a.id===id),activeFolder=page==='folder'?id:activePost?.folder_id;
+    const albums=(parent=null,depth=0)=>F.children(D,selected,parent).map(f=>`<li style="--album-depth:${depth}"><a href="${folderURL(f)}" ${f.id===activeFolder?'aria-current="page"':''}><span>▤</span>${E(f.name)}</a>${F.children(D,selected,f.id).length?`<ul>${albums(f.id,depth+1)}</ul>`:''}</li>`).join('');
+    return `<aside class="file-tree board-sidebar" id="directory">${profileCard()}<nav aria-label="版块导航"><h2>版块</h2>${['knowledge','projects','interviews','essays'].map(k=>`<a class="board-link" href="#/${k}" ${k===selected?'aria-current="page"':''}>${E(labels[k])}</a>`).join('')}</nav>${F.keys[selected]?`<nav class="album-navigation" aria-label="合集导航"><div class="album-heading"><h2>合集</h2></div><ul>${albums()||'<li class="folder-empty">暂无合集</li>'}</ul><a class="all-albums" href="#/${selected}?view=albums">查看全部合集 →</a></nav>`:''}</aside>`;
   }
   const essays=()=>directory('essays'),projects=()=>directory('projects');
   function options(values,all){return `<option value="">${E(all)}</option>`+[...new Set(values.filter(Boolean))].map(v=>`<option value="${E(v)}">${E(v)}</option>`).join('');}
-  function interviews(){return crumb([['职业合集','#/career'],['面试经历']])+head('03 / INTERVIEWS','面试经历','问题、回答与复盘。')+`<div class="file-list">${F.children(D,'interviews').map(f=>`<a class="folder-list-row" href="${folderURL(f)}"><span class="folder-symbol" aria-hidden="true"></span><span>${E(f.name)}</span><span>›</span></a>`).join('')}</div><div class="filter-bar"><label>企业<select id="filter-company">${options(D.interviews.map(a=>a.company),'全部企业')}</select></label><label>岗位<select id="filter-role">${options(D.interviews.map(a=>a.role),'全部岗位')}</select></label><label>来源<select id="filter-source">${options(D.interviews.map(a=>a.source),'全部来源')}</select></label></div><div class="list-heading"><span>面试记录</span><span id="interview-count"></span></div><div id="interview-list" aria-live="polite"></div>`;}
-  function applyInterviewFilters(){const list=D.interviews.filter(a=>!a.folder_id).filter(a=>['company','role','source'].every(k=>!document.getElementById('filter-'+k).value||a[k]===document.getElementById('filter-'+k).value)).sort((a,b)=>b.date.localeCompare(a.date));document.getElementById('interview-count').textContent=`${list.length} 条`;document.getElementById('interview-list').innerHTML=list.map(a=>entry(a,'interview')).join('')||empty();}
+  const interviews=()=>directory('interviews');
   const facts=items=>`<dl class="facts">${items.map(([k,v])=>`<div class="fact"><dt>${E(k)}</dt><dd>${E(v||'待补充')}</dd></div>`).join('')}</dl>`;
   const allDocs=()=>[...D.articles.map(x=>({...x,type:'article',collection:'技术博客'})),...D.projects.map(x=>({...x,type:'project',collection:'作品集合'})),...D.interviews.map(x=>({...x,type:'interview',collection:'面试经历'})),...D.essays.map(x=>({...x,type:'essay',collection:'随笔'}))];
   function article(type,id){
@@ -104,19 +103,17 @@
   function render(){
     stopScene();
     let parts;try{parts=(location.hash.slice(1).split('?')[0]||'/').split('/').filter(Boolean).map(decodeURIComponent);}catch{parts=['404'];}
-    const [page,id,...groups]=parts;
+    const [rawPage,id,...groups]=parts;const page=rawPage==='home'?undefined:rawPage;
     const navFolder=navNodes(D.navigation).find(n=>n.href==='#/'+page&&n.children?.length);
     let html;
-    if(!page)html=home();else if(page==='knowledge')html=knowledge(id);else if(page==='projects')html=projects();else if(page==='interviews')html=interviews();else if(page==='essays')html=essays();else if(page==='folder')html=directory(D.folders.find(f=>f.id===id)?.collection,id);else if(navFolder)html=folderPage(navFolder);else if(['article','project','interview','essay'].includes(page))html=article(page,id);else if(page==='resume')html=resume();else html=notFound();
+    if(!page)html=home();else if(page==='knowledge')html=knowledge(id);else if(page==='albums')html=albumIndex();else if(page==='projects')html=projects();else if(page==='interviews')html=interviews();else if(page==='essays')html=essays();else if(page==='folder')html=directory(D.folders.find(f=>f.id===id)?.collection,id);else if(navFolder)html=folderPage(navFolder);else if(['article','project','interview','essay'].includes(page))html=article(page,id);else if(page==='resume')html=resume();else html=notFound();
     const collection=page==='folder'?D.folders.find(f=>f.id===id)?.collection:{article:'knowledge',project:'projects',interview:'interviews',essay:'essays'}[page]||page;
     main.setAttribute('data-page',page||'home');
-    if(Object.hasOwn(labels,collection)||navFolder)html=`<div class="explorer"><button class="mobile-directory" aria-expanded="false" aria-controls="directory" id="directory-toggle">文件树</button>${fileTree(page,id)}<div class="file-pane">${html}</div></div>`;
-    main.innerHTML=!page?html:`<div class="route-strip field-${E(Object.hasOwn(labels,collection)?collection:'neutral')}" aria-hidden="true"></div><div class="container">${html}</div>`;
+    if(Object.hasOwn(labels,collection)||navFolder)html=`<div class="explorer"><button class="mobile-directory" aria-expanded="false" aria-controls="directory" id="directory-toggle">版块与合集</button>${fileTree(page,id)}<div class="file-pane">${html}</div></div>`;
+    main.innerHTML=!page?html:`<div class="route-strip field-${E(Object.hasOwn(labels,collection)?collection:'neutral')}" aria-hidden="true"><span>${E(labels[collection]||({albums:'合集',resume:'关于'}[page])||'CAI')}</span></div><div class="container">${html}</div>`;
     stopScene=startScene(main.querySelector('#research-field'));
-    const setTreeOpen=open=>{main.querySelectorAll('[data-tree-key]').forEach(el=>{el.open=open;treeState.set(el.dataset.treeKey,open);});};
-    document.getElementById('tree-expand')?.addEventListener('click',()=>setTreeOpen(true));
-    document.getElementById('tree-collapse')?.addEventListener('click',()=>setTreeOpen(false));
-    main.querySelectorAll('[data-tree-key]').forEach(el=>el.addEventListener('toggle',()=>{if(el.isConnected)treeState.set(el.dataset.treeKey,el.open);}));
+    document.body.classList.toggle('is-home',!page);
+    document.getElementById('browse-posts')?.addEventListener('click',()=>document.getElementById('home-posts').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'}));
     const active=page==='folder'?D.folders.find(f=>f.id===id)?.collection:{article:'knowledge',project:'projects',interview:'interviews',essay:'essays'}[page]||page;
     document.getElementById('nav').innerHTML=navigationMarkup(D.navigation,active||'home');
     document.querySelectorAll('#nav .nav-item').forEach(item=>{
@@ -127,10 +124,11 @@
     });
     document.getElementById('nav').classList.remove('open');document.getElementById('menu-toggle').setAttribute('aria-expanded','false');
     document.title=page?(main.querySelector('h1')?.textContent||'CAI')+' · CAI':'CAI';
-    if(page==='interviews'){applyInterviewFilters();['company','role','source'].forEach(k=>document.getElementById('filter-'+k).addEventListener('change',applyInterviewFilters));}
+
     document.getElementById('directory-toggle')?.addEventListener('click',e=>{const open=document.getElementById('directory').classList.toggle('is-open');e.currentTarget.setAttribute('aria-expanded',String(open));});
     document.getElementById('print-resume')?.addEventListener('click',()=>window.print());
     main.querySelectorAll('[data-section]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();document.getElementById('section-'+a.dataset.section)?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});}));
+    document.getElementById('board-search')?.addEventListener('submit',e=>{e.preventDefault();const params=new URLSearchParams(location.hash.split('?')[1]||'');params.set('q',document.getElementById('board-query').value.trim());params.delete('page');location.hash=location.hash.split('?')[0]+'?'+params.toString();});
     window.InlineWriter?.mount();
     const section=new URLSearchParams(location.hash.split('?')[1]||'').get('section');
     if(section!==null)document.getElementById('section-'+section)?.scrollIntoView();else window.scrollTo(0,0);

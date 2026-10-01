@@ -290,6 +290,11 @@ window.BLOG = {
       ]
     },
     {
+      "id": "albums",
+      "title": "合集",
+      "href": "#/albums"
+    },
+    {
       "id": "essays",
       "title": "随笔",
       "href": "#/essays"
