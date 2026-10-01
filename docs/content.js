@@ -2,7 +2,7 @@
 window.BLOG = {
   "profile": {
     "name": "Cai",
-    "intro": "技术笔记、项目实践与职业记录。",
+    "intro": "技术帖子、项目实践与职业记录。",
     "github": "https://github.com/KNAIOS",
     "resume": {
       "headline": "个人简历",
@@ -72,7 +72,7 @@ window.BLOG = {
     },
     {
       "id": "go-cancellation",
-      "title": "Go 并发笔记：先设计退出，再启动任务",
+      "title": "Go 并发帖子：先设计退出，再启动任务",
       "category": "Go",
       "tags": [
         "Go",
@@ -174,7 +174,7 @@ window.BLOG = {
         },
         {
           "title": "把结果整理成文章",
-          "text": "用问题、实验条件、观察结果、解释和适用边界五部分组织笔记。暂时没有做过的实验列为待验证，而不是写成结论。"
+          "text": "用问题、实验条件、观察结果、解释和适用边界五部分组织帖子。暂时没有做过的实验列为待验证，而不是写成结论。"
         }
       ],
       "links": [],
