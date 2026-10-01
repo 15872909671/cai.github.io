@@ -20,8 +20,10 @@
   });}
   function navigationMarkup(nodes,selected){
     const tree=navigationTree(nodes);
-    const leaves=items=>`<ul class="mega-tree">${items.map(n=>`<li>${n.children?.length?`<details open><summary><span aria-hidden="true">▱</span><a href="${safeURL(n.href)}">${E(n.title)}</a></summary>${leaves(n.children)}</details>`:`<a href="${safeURL(n.href)}"><span aria-hidden="true">·</span>${E(n.title)}</a>`}</li>`).join('')}</ul>`;
-    return `<div class="mega-tabs">${tree.map(n=>`<a class="mega-tab ${containsSection(n,selected)?'active':''}" href="${safeURL(n.href)}" ${n.id===selected?'aria-current="page"':''}>${E(n.title)}</a>`).join('')}<button type="button" id="mega-toggle" aria-label="展开全部栏目" aria-controls="mega-panel" aria-expanded="false">⌄</button></div><div id="mega-panel" class="mega-panel" hidden><div class="mega-grid">${tree.map(n=>`<section class="mega-column"><h2><a href="${safeURL(n.href)}">${E(n.title)}</a></h2>${n.children.length?leaves(n.children):'<p class="mega-empty">暂无子项</p>'}</section>`).join('')}</div></div>`;
+    const paths={home:'M3 10 12 3l9 7M5 9v12h5v-7h4v7h5V9',knowledge:'m8 5-6 7 6 7m8-14 6 7-6 7m-3-17-2 20',tools:'m14 6 4 4 4-4a6 6 0 0 1-8 8l-7 7-4-4 7-7a6 6 0 0 1 8-8z',photos:'M3 3h18v18H3zM3 17l6-6 4 4 3-3 5 5M8 7h.01',essays:'m4 16 12-12 4 4L8 20H4zM13 7l4 4',guestbook:'M3 4h18v13H8l-5 4zM7 8h10M7 12h7',folder:'M3 6h7l2 3h9v12H3z',file:'M5 3h9l5 5v13H5zM14 3v6h5M8 13h8M8 17h6'};
+    const icon=key=>`<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${paths[key]||paths.file}"/></svg>`;
+    const leaves=items=>`<ul class="mega-tree">${items.map(n=>`<li>${n.children?.length?`<details><summary>${icon('folder')}<a href="${safeURL(n.href)}" title="${E(n.title)}">${E(n.title)}</a></summary>${leaves(n.children)}</details>`:`<a href="${safeURL(n.href)}" title="${E(n.title)}">${icon('file')}<span class="nav-leaf-title">${E(n.title)}</span></a>`}</li>`).join('')}</ul>`;
+    return `<div class="mega-tabs">${tree.map(n=>`<a class="mega-tab ${containsSection(n,selected)?'active':''}" href="${safeURL(n.href)}" ${n.id===selected?'aria-current="page"':''}>${icon(n.id)}<span>${E(n.title)}</span></a>`).join('')}<button type="button" id="mega-toggle" aria-label="展开全部栏目" aria-controls="mega-panel" aria-expanded="false">⌄</button></div><div id="mega-panel" class="mega-panel" hidden><div class="mega-grid">${tree.map(n=>`<section class="mega-column"><h2><a href="${safeURL(n.href)}">${icon(n.id)}<span>${E(n.title)}</span></a></h2>${n.children.length?leaves(n.children):'<p class="mega-empty">暂无子项</p>'}</section>`).join('')}</div></div>`;
   }
   function setupNavigation(){
     const nav=document.getElementById('nav'),panel=document.getElementById('mega-panel'),toggle=document.getElementById('mega-toggle');
@@ -30,7 +32,7 @@
     nav.onpointerleave=e=>{if(e.pointerType==='mouse')set(false);};
     nav.megaSet=set;
     if(!nav.megaFocusBound){
-      nav.addEventListener('focusin',e=>{if(e.target.id!=='mega-toggle')nav.megaSet(true);});
+      nav.addEventListener('focusin',e=>{if(e.target.id!=='mega-toggle'&&e.target.matches(':focus-visible'))nav.megaSet(true);});
       nav.addEventListener('focusout',e=>{if(!nav.contains(e.relatedTarget))nav.megaSet(false);});
       nav.megaFocusBound=true;
     }
