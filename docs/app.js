@@ -23,21 +23,19 @@
     const paths={projects:'M3 7h18v14H3zM8 7V3h8v4M3 12h18M10 12v3h4v-3',home:'M3 10 12 3l9 7M5 9v12h5v-7h4v7h5V9',knowledge:'m8 5-6 7 6 7m8-14 6 7-6 7m-3-17-2 20',tools:'m14 6 4 4 4-4a6 6 0 0 1-8 8l-7 7-4-4 7-7a6 6 0 0 1 8-8z',photos:'M3 3h18v18H3zM3 17l6-6 4 4 3-3 5 5M8 7h.01',essays:'m4 16 12-12 4 4L8 20H4zM13 7l4 4',guestbook:'M3 4h18v13H8l-5 4zM7 8h10M7 12h7',folder:'M3 6h7l2 3h9v12H3z',file:'M5 3h9l5 5v13H5zM14 3v6h5M8 13h8M8 17h6'};
     const icon=key=>`<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${paths[key]||paths.file}"/></svg>`;
     const leaves=items=>`<ul class="mega-tree">${items.map(n=>`<li>${n.children?.length?`<details><summary>${icon('folder')}<a href="${safeURL(n.href)}" title="${E(n.title)}">${E(n.title)}</a></summary>${leaves(n.children)}</details>`:`<a href="${safeURL(n.href)}" title="${E(n.title)}">${icon('file')}<span class="nav-leaf-title">${E(n.title)}</span></a>`}</li>`).join('')}</ul>`;
-    return `<div class="mega-tabs">${tree.map(n=>`<a class="mega-tab ${containsSection(n,selected)?'active':''}" href="${safeURL(n.href)}" ${n.id===selected?'aria-current="page"':''}>${icon(n.id)}<span>${E(n.title)}</span></a>`).join('')}<button type="button" id="mega-toggle" aria-label="展开全部栏目" aria-controls="mega-panel" aria-expanded="false">⌄</button></div><div id="mega-panel" class="mega-panel" hidden><div class="mega-grid">${tree.map(n=>`<section class="mega-column"><h2><a href="${safeURL(n.href)}">${icon(n.id)}<span>${E(n.title)}</span></a></h2>${n.children.length?leaves(n.children):''}</section>`).join('')}</div></div>`;
+    return `<div class="mega-tabs">${tree.map(n=>`<a class="mega-tab ${containsSection(n,selected)?'active':''}" href="${safeURL(n.href)}" ${n.id===selected?'aria-current="page"':''}>${icon(n.id)}<span>${E(n.title)}</span></a>`).join('')}</div><div id="mega-panel" class="mega-panel" hidden><div class="mega-grid">${tree.map(n=>`<section class="mega-column"><h2><a href="${safeURL(n.href)}">${icon(n.id)}<span>${E(n.title)}</span></a></h2>${n.children.length?leaves(n.children):''}</section>`).join('')}</div></div>`;
   }
   function setupNavigation(){
-    const nav=document.getElementById('nav'),panel=document.getElementById('mega-panel'),toggle=document.getElementById('mega-toggle');
-    const set=open=>{panel.hidden=!open;toggle.setAttribute('aria-expanded',String(open));nav.classList.toggle('mega-open',open);};
+    const nav=document.getElementById('nav'),panel=document.getElementById('mega-panel');
+    const set=open=>{panel.hidden=!open;nav.setAttribute('aria-expanded',String(open));nav.classList.toggle('mega-open',open);};
     nav.onpointerenter=e=>{if(e.pointerType==='mouse')set(true);};
     nav.onpointerleave=e=>{if(e.pointerType==='mouse')set(false);};
     nav.megaSet=set;
     if(!nav.megaFocusBound){
-      nav.addEventListener('focusin',e=>{if(e.target.id!=='mega-toggle'&&e.target.matches(':focus-visible'))nav.megaSet(true);});
+      nav.addEventListener('focusin',e=>{if(e.target.matches(':focus-visible'))nav.megaSet(true);});
       nav.addEventListener('focusout',e=>{if(!nav.contains(e.relatedTarget))nav.megaSet(false);});
       nav.megaFocusBound=true;
     }
-    toggle.onpointerdown=e=>e.preventDefault();
-    toggle.onclick=()=>set(panel.hidden);
     nav.onkeydown=e=>{if(e.key==='Escape'){set(false);e.stopPropagation();}};
     nav.onclick=e=>{if(e.target.closest('a'))set(false);};
   }

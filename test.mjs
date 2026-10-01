@@ -42,10 +42,10 @@ context.BLOG.folders.push({id:'nested',name:'取消与超时',collection:'knowle
 context.BLOG.articles.push({id:'nested-post',title:'嵌套帖子',folder_id:'nested',date:'2026-10-01',sections:[]});
 assert.match(route('#/folder/'+encodeURIComponent('knowledge/Go')+'?view=albums'),/取消与超时/);assert.match(route('#/folder/nested'),/嵌套帖子/);assert.match(route('#/article/nested-post'),/取消与超时/);assert.match(route('#/folder/missing'),/这一页还没有写下/);
 context.BLOG.articles.pop();context.BLOG.folders.pop();
-route('#/');const nav=node('nav'),panel=node('mega-panel'),toggle=node('mega-toggle');
+route('#/');const nav=node('nav'),panel=node('mega-panel'),toggle=nav;
 nav.onpointerenter({pointerType:'mouse'});assert.equal(panel.hidden,false);assert.equal(toggle.attributes['aria-expanded'],'true');
 nav.onpointerleave({pointerType:'mouse'});assert.equal(panel.hidden,true);
-nav.onpointerenter({pointerType:'touch'});assert.equal(panel.hidden,true);toggle.onclick();assert.equal(panel.hidden,false);
+nav.onpointerenter({pointerType:'touch'});assert.equal(panel.hidden,true);nav.megaSet(true);assert.equal(panel.hidden,false);
 nav.onkeydown({key:'Escape',stopPropagation(){}});assert.equal(panel.hidden,true);
 assert.equal((nav.innerHTML.match(/class="mega-column"/g)||[]).length,7);
 for(const title of ['主页','技术','工具','相册','随笔','留言'])assert.ok(nav.innerHTML.includes(title));
