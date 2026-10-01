@@ -13,7 +13,33 @@
   const entry=(a,type)=>`<a class="entry file-entry" href="${routeFor(type,a.id)}"><span class="file-symbol" aria-hidden="true"></span><div class="file-content"><h3>${E(a.title)}</h3><p>${E(a.summary)}</p><div class="entry-top"><span>${E(a.category||a.company||a.status||'帖子')}</span><span>${E(a.date)}</span>${a.demo===true||a.published===false?badge(a):''}</div></div><span class="file-open" aria-hidden="true">→</span></a>`;
   const navNodes=nodes=>nodes.flatMap(n=>[n,...navNodes(n.children||[])]);
   const containsSection=(node,key)=>node.id===key||(node.children||[]).some(n=>containsSection(n,key));
-  function navigationMarkup(nodes,selected){return nodes.map(n=>`<div class="nav-item"><a href="${safeURL(n.href)}" ${containsSection(n,selected)?'class="active"':''} ${n.id===selected?'aria-current="page"':''}>${E(n.title)}</a>${n.children?.length?`<details class="nav-disclosure"><summary aria-label="展开${E(n.title)}子栏目">⌄</summary><div class="nav-submenu">${navigationMarkup(n.children,selected)}</div></details>`:''}</div>`).join('');}
+  function navigationTree(nodes){return nodes.map(n=>{
+    const collection=n.collection,seen=new Set();
+    function branch(parent=null){return [...F.children(D,collection,parent).filter(f=>!seen.has(f.id)).map(f=>{seen.add(f.id);return {id:f.id,title:f.name,href:folderURL(f),children:branch(f.id)};}),...F.posts(D,collection,parent).filter(p=>p.published!==false).map(p=>({id:p.id,title:p.title,href:routeFor(F.types[collection],p.id)}))];}
+    return {...n,children:[...navigationTree(n.children||[]),...(F.keys[collection]?branch():[])]};
+  });}
+  function navigationMarkup(nodes,selected){
+    const tree=navigationTree(nodes);
+    const leaves=items=>`<ul class="mega-tree">${items.map(n=>`<li>${n.children?.length?`<details open><summary><span aria-hidden="true">▱</span><a href="${safeURL(n.href)}">${E(n.title)}</a></summary>${leaves(n.children)}</details>`:`<a href="${safeURL(n.href)}"><span aria-hidden="true">·</span>${E(n.title)}</a>`}</li>`).join('')}</ul>`;
+    return `<div class="mega-tabs">${tree.map(n=>`<a class="mega-tab ${containsSection(n,selected)?'active':''}" href="${safeURL(n.href)}" ${n.id===selected?'aria-current="page"':''}>${E(n.title)}</a>`).join('')}<button type="button" id="mega-toggle" aria-label="展开全部栏目" aria-controls="mega-panel" aria-expanded="false">⌄</button></div><div id="mega-panel" class="mega-panel" hidden><div class="mega-grid">${tree.map(n=>`<section class="mega-column"><h2><a href="${safeURL(n.href)}">${E(n.title)}</a></h2>${n.children.length?leaves(n.children):'<p class="mega-empty">暂无子项</p>'}</section>`).join('')}</div></div>`;
+  }
+  function setupNavigation(){
+    const nav=document.getElementById('nav'),panel=document.getElementById('mega-panel'),toggle=document.getElementById('mega-toggle');
+    const set=open=>{panel.hidden=!open;toggle.setAttribute('aria-expanded',String(open));nav.classList.toggle('mega-open',open);};
+    nav.onpointerenter=e=>{if(e.pointerType==='mouse')set(true);};
+    nav.onpointerleave=e=>{if(e.pointerType==='mouse')set(false);};
+    nav.megaSet=set;
+    if(!nav.megaFocusBound){
+      nav.addEventListener('focusin',e=>{if(e.target.id!=='mega-toggle')nav.megaSet(true);});
+      nav.addEventListener('focusout',e=>{if(!nav.contains(e.relatedTarget))nav.megaSet(false);});
+      nav.megaFocusBound=true;
+    }
+    toggle.onpointerdown=e=>e.preventDefault();
+    toggle.onclick=()=>set(panel.hidden);
+    nav.onkeydown=e=>{if(e.key==='Escape'){set(false);e.stopPropagation();}};
+    nav.onclick=e=>{if(e.target.closest('a'))set(false);};
+  }
+  function sectionPlaceholder(title,text){return crumb([[title]])+head('',title,'')+empty(text,'');}
   function folderPage(node){return crumb([[node.title]])+head('',node.title,'')+`<section class="file-list"><div class="list-heading"><span>版块</span><span>${node.children.length} 项</span></div>${node.children.map(n=>`<a class="folder-list-row" href="${safeURL(n.href)}"><span class="folder-symbol" aria-hidden="true"></span><span>${E(n.title)}</span><span class="folder-row-count">›</span></a>`).join('')}</section>`;}
   const publicDocs=()=>allDocs().filter(p=>p.published!==false).sort((a,b)=>b.date.localeCompare(a.date));
   function profileCard(){return `<section class="profile-card"><div class="profile-cover"></div><div class="profile-avatar" aria-hidden="true">C</div><h2>${E(D.profile.name)}</h2><div class="profile-stats"><a href="#/knowledge"><strong>${publicDocs().length}</strong><span>帖子</span></a><a href="#/albums"><strong>${D.folders.length}</strong><span>合集</span></a><a href="#/resume"><strong>↗</strong><span>简历</span></a></div><a class="profile-github" href="${safeURL(D.profile.github)}" target="_blank" rel="noopener noreferrer">GitHub ↗</a></section>`;}
@@ -106,22 +132,17 @@
     const [rawPage,id,...groups]=parts;const page=rawPage==='home'?undefined:rawPage;
     const navFolder=navNodes(D.navigation).find(n=>n.href==='#/'+page&&n.children?.length);
     let html;
-    if(!page)html=home();else if(page==='knowledge')html=knowledge(id);else if(page==='albums')html=albumIndex();else if(page==='projects')html=projects();else if(page==='interviews')html=interviews();else if(page==='essays')html=essays();else if(page==='folder')html=directory(D.folders.find(f=>f.id===id)?.collection,id);else if(navFolder)html=folderPage(navFolder);else if(['article','project','interview','essay'].includes(page))html=article(page,id);else if(page==='resume')html=resume();else html=notFound();
+    if(!page)html=home();else if(page==='knowledge')html=knowledge(id);else if(page==='albums')html=albumIndex();else if(page==='projects')html=projects();else if(page==='interviews')html=interviews();else if(page==='essays')html=essays();else if(page==='folder')html=directory(D.folders.find(f=>f.id===id)?.collection,id);else if(page==='photos')html=sectionPlaceholder('相册','还没有照片');else if(page==='guestbook')html=sectionPlaceholder('留言','留言功能尚未开放');else if(page==='career')html=folderPage({title:'职业合集',children:[{title:'作品集合',href:'#/projects'},{title:'面试经历',href:'#/interviews'}]});else if(navFolder)html=folderPage(navFolder);else if(['article','project','interview','essay'].includes(page))html=article(page,id);else if(page==='resume')html=resume();else html=notFound();
     const collection=page==='folder'?D.folders.find(f=>f.id===id)?.collection:{article:'knowledge',project:'projects',interview:'interviews',essay:'essays'}[page]||page;
     main.setAttribute('data-page',page||'home');
     if(Object.hasOwn(labels,collection)||navFolder)html=`<div class="explorer"><button class="mobile-directory" aria-expanded="false" aria-controls="directory" id="directory-toggle">版块与合集</button>${fileTree(page,id)}<div class="file-pane">${html}</div></div>`;
-    main.innerHTML=!page?html:`<div class="route-strip field-${E(Object.hasOwn(labels,collection)?collection:'neutral')}" aria-hidden="true"><span>${E(labels[collection]||({albums:'合集',resume:'关于'}[page])||'CAI')}</span></div><div class="container">${html}</div>`;
+    main.innerHTML=!page?html:`<div class="route-strip field-${E(Object.hasOwn(labels,collection)?collection:'neutral')}" aria-hidden="true"><span>${E(labels[collection]||({albums:'合集',resume:'关于',tools:'工具',photos:'相册',guestbook:'留言'}[page])||'CAI')}</span></div><div class="container">${html}</div>`;
     stopScene=startScene(main.querySelector('#research-field'));
     document.body.classList.toggle('is-home',!page);
     document.getElementById('browse-posts')?.addEventListener('click',()=>document.getElementById('home-posts').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'}));
     const active=page==='folder'?D.folders.find(f=>f.id===id)?.collection:{article:'knowledge',project:'projects',interview:'interviews',essay:'essays'}[page]||page;
     document.getElementById('nav').innerHTML=navigationMarkup(D.navigation,active||'home');
-    document.querySelectorAll('#nav .nav-item').forEach(item=>{
-      const menu=item.querySelector(':scope > .nav-disclosure');if(!menu)return;
-      item.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse')menu.open=true;});
-      item.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'&&!item.contains(document.activeElement))menu.open=false;});
-      item.addEventListener('focusout',e=>{if(!item.contains(e.relatedTarget))menu.open=false;});
-    });
+    setupNavigation();
     document.getElementById('nav').classList.remove('open');document.getElementById('menu-toggle').setAttribute('aria-expanded','false');
     document.title=page?(main.querySelector('h1')?.textContent||'CAI')+' · CAI':'CAI';
 
@@ -144,7 +165,7 @@
   document.getElementById('menu-toggle').addEventListener('click',e=>{const open=document.getElementById('nav').classList.toggle('open');e.currentTarget.setAttribute('aria-expanded',String(open));});
   document.querySelector('.skip')?.addEventListener('click',e=>{e.preventDefault();main.focus();main.scrollIntoView();});
   document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('#nav details[open]').forEach(n=>n.open=false);});
-  document.addEventListener('click',e=>{if(!e.target.closest('#nav'))document.querySelectorAll('#nav details[open]').forEach(n=>n.open=false);});
+  document.addEventListener('click',e=>{if(!e.target.closest('#nav')){const p=document.getElementById('mega-panel');if(p)p.hidden=true;document.getElementById('mega-toggle')?.setAttribute('aria-expanded','false');}});
   document.getElementById('year').textContent=new Date().getFullYear();window.addEventListener('hashchange',()=>{if(window.InlineWriter?.allowNavigation()===false)return;const update=()=>{render();main.focus({preventScroll:true});};if(document.startViewTransition&&!matchMedia('(prefers-reduced-motion: reduce)').matches){document.startViewTransition(update);}else update();});window.refreshBlog=render;render();
 })();
 

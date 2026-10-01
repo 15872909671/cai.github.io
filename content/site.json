@@ -261,42 +261,56 @@
   "navigation": [
     {
       "id": "home",
-      "title": "首页",
+      "title": "主页",
       "href": "#/",
       "children": [
         {
-          "id": "knowledge",
-          "title": "技术博客",
-          "href": "#/knowledge"
-        }
-      ]
-    },
-    {
-      "id": "career",
-      "title": "职业合集",
-      "href": "#/career",
-      "children": [
-        {
-          "id": "projects",
-          "title": "作品集合",
-          "href": "#/projects"
+          "id": "resume",
+          "title": "关于我",
+          "href": "#/resume"
         },
         {
           "id": "interviews",
           "title": "面试经历",
-          "href": "#/interviews"
+          "href": "#/interviews",
+          "collection": "interviews"
         }
       ]
     },
     {
-      "id": "albums",
-      "title": "合集",
-      "href": "#/albums"
+      "id": "knowledge",
+      "title": "技术",
+      "href": "#/knowledge",
+      "collection": "knowledge"
+    },
+    {
+      "id": "tools",
+      "title": "工具",
+      "href": "#/tools",
+      "children": [
+        {
+          "id": "projects",
+          "title": "作品集合",
+          "href": "#/projects",
+          "collection": "projects"
+        }
+      ]
+    },
+    {
+      "id": "photos",
+      "title": "相册",
+      "href": "#/photos"
     },
     {
       "id": "essays",
       "title": "随笔",
-      "href": "#/essays"
+      "href": "#/essays",
+      "collection": "essays"
+    },
+    {
+      "id": "guestbook",
+      "title": "留言",
+      "href": "#/guestbook"
     }
   ]
 }
