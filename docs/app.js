@@ -3,7 +3,7 @@
   const D=window.BLOG, main=document.getElementById('main');
   const E=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const safeURL=u=>typeof u==='string'&&(/^(https?:\/\/|#\/)/.test(u))?E(u):'#/';
-  const labels={knowledge:'技术博客',projects:'作品集合',interviews:'面试经历'};
+  const labels={knowledge:'技术博客',projects:'作品集合',interviews:'面试经历',career:'职业合集',essays:'随笔'};
   const tags=arr=>(arr||[]).map(t=>`<span class="tag">${E(t)}</span>`).join('');
   const badge=a=>`<span class="badge ${a.demo===true?'demo':''}">${E(a.demo===true?'示例模板':a.kind||a.status||'档案')}</span>`;
   const empty=(title='还没有匹配的内容',text='换个关键词或筛选条件试试。')=>`<div class="empty"><h2>${E(title)}</h2><p>${E(text)}</p></div>`;
@@ -11,10 +11,15 @@
   const head=(en,title,desc)=>`<div class="page-head"><h1>${E(title)}</h1></div>`;
   const routeFor=(type,id)=>`#/${type}/${encodeURIComponent(id)}`;
   const entry=(a,type)=>`<a class="entry file-entry" href="${routeFor(type,a.id)}"><span class="file-symbol" aria-hidden="true"></span><div class="file-content"><h3>${E(a.title)}</h3><p>${E(a.summary)}</p><div class="entry-top"><span>${E(a.category||a.company||a.status||'帖子')}</span><span>${E(a.date)}</span>${a.demo===true?badge(a):''}</div></div><span class="file-open" aria-hidden="true">→</span></a>`;
+  const navNodes=nodes=>nodes.flatMap(n=>[n,...navNodes(n.children||[])]);
+  const containsSection=(node,key)=>node.id===key||(node.children||[]).some(n=>containsSection(n,key));
+  function navigationMarkup(nodes,selected){return nodes.map(n=>`<div class="nav-item"><a href="${safeURL(n.href)}" ${containsSection(n,selected)?'class="active"':''} ${n.id===selected?'aria-current="page"':''}>${E(n.title)}</a>${n.children?.length?`<details class="nav-disclosure"><summary aria-label="展开${E(n.title)}子栏目">⌄</summary><div class="nav-submenu">${navigationMarkup(n.children,selected)}</div></details>`:''}</div>`).join('');}
+  function folderPage(node){return crumb([[node.title]])+head('',node.title,'')+`<section class="file-list"><div class="list-heading"><span>文件夹</span><span>${node.children.length} 项</span></div>${node.children.map(n=>`<a class="folder-list-row" href="${safeURL(n.href)}"><span class="folder-symbol" aria-hidden="true"></span><span>${E(n.title)}</span><span class="folder-row-count">›</span></a>`).join('')}</section>`;}
+  function essays(){return crumb([['随笔']])+head('','随笔','')+`<section class="file-list"><div class="list-heading"><span>帖子</span><span>${D.essays.length} 篇</span></div>${D.essays.map(a=>entry(a,'essay')).join('')||empty('这个文件夹还没有帖子','')}</section>`;}
   function home(){
-    const descriptions=['Go、Linux、分布式与数据库','代码项目与实现记录','面试问题、资料与复盘'];
-    const counts=[`${D.articles.length} 篇帖子`,`${D.projects.length} 篇帖子`,`${D.interviews.length} 份模板`];
-    return `<div class="portal"><section class="portal-intro"><div class="intro-copy"><h1>内容总览</h1></div><div class="research-stage"><canvas id="research-field" aria-hidden="true"></canvas></div></section><section class="portal-sections" aria-label="三个集合">${Object.keys(labels).map((k,i)=>`<a href="#/${k}"><div class="portal-section-title"><h2>${labels[k]}</h2><span aria-hidden="true">↗</span></div><span class="section-count">${counts[i]}</span></a>`).join('')}</section><div class="portal-content"><section class="portal-feed"><div class="section-heading"><h2>最新帖子</h2><a class="text-link" href="#/knowledge">全部帖子 ↗</a></div><div class="topic-links" aria-label="技术分类">${D.categories.filter(c=>c!=='全部').map(c=>`<a href="#/knowledge/${encodeURIComponent(c)}">${E(c)}</a>`).join('')}</div>${D.articles.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(a=>entry(a,'article')).join('')}</section><aside class="portal-aside"><section><div class="section-heading"><h2>作品集合</h2><a class="text-link" href="#/projects">全部 ↗</a></div>${D.projects.map(p=>entry(p,'project')).join('')||'<p class="folder-empty">暂无帖子</p>'}</section><section class="portal-interviews"><div class="section-heading"><h2>面经资料</h2><a class="text-link" href="#/interviews">全部 ↗</a></div>${D.interviews.map(a=>`<a class="compact-record" href="${routeFor('interview',a.id)}"><span class="record-type">模板</span><span>${E(a.title)}</span></a>`).join('')}</section></aside></div></div>`;
+    const homeKeys=['knowledge','career','essays'];
+    const counts=[`${D.articles.length} 篇帖子`,'2 个文件夹',`${D.essays.length} 篇帖子`];
+    return `<div class="portal"><section class="portal-intro"><div class="intro-copy"><h1>内容总览</h1></div><div class="research-stage"><canvas id="research-field" aria-hidden="true"></canvas></div></section><section class="portal-sections" aria-label="三个集合">${homeKeys.map((k,i)=>`<a href="#/${k}"><div class="portal-section-title"><h2>${labels[k]}</h2><span aria-hidden="true">↗</span></div><span class="section-count">${counts[i]}</span></a>`).join('')}</section><div class="portal-content"><section class="portal-feed"><div class="section-heading"><h2>最新帖子</h2><a class="text-link" href="#/knowledge">全部帖子 ↗</a></div><div class="topic-links" aria-label="技术分类">${D.categories.filter(c=>c!=='全部').map(c=>`<a href="#/knowledge/${encodeURIComponent(c)}">${E(c)}</a>`).join('')}</div>${D.articles.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(a=>entry(a,'article')).join('')}</section><aside class="portal-aside"><section><div class="section-heading"><h2>作品集合</h2><a class="text-link" href="#/projects">全部 ↗</a></div>${D.projects.map(p=>entry(p,'project')).join('')||'<p class="folder-empty">暂无帖子</p>'}</section><section class="portal-interviews"><div class="section-heading"><h2>面经资料</h2><a class="text-link" href="#/interviews">全部 ↗</a></div>${D.interviews.map(a=>`<a class="compact-record" href="${routeFor('interview',a.id)}"><span class="record-type">模板</span><span>${E(a.title)}</span></a>`).join('')}</section></aside></div></div>`;
   }
   function knowledge(category='全部'){
     if(!D.categories.includes(category))return notFound();
@@ -24,22 +29,26 @@
   }
   const treeState=new Map();
   function fileTree(page,id){
-    const selected={article:'knowledge',project:'projects',interview:'interviews'}[page]||page;
+    const selected={article:'knowledge',project:'projects',interview:'interviews',essay:'essays'}[page]||page;
     const activeArticle=page==='article'?D.articles.find(a=>a.id===id):null;
     const file=(a,type)=>`<li><a class="tree-file ${page===type&&id===a.id?'selected':''}" href="${routeFor(type,a.id)}" ${page===type&&id===a.id?'aria-current="page"':''}><span class="file-symbol" aria-hidden="true"></span><span>${E(a.title)}</span></a></li>`;
     const branch=(key,title,url,children,reveal,defaultOpen=false)=>`<li><details data-tree-key="${E(key)}" ${treeState.get(key)??(reveal||defaultOpen)?'open':''}><summary><span class="tree-caret" aria-hidden="true">›</span><span class="folder-symbol" aria-hidden="true"></span><span class="tree-folder-name">${E(title)}</span><a class="tree-open" href="${safeURL(url)}" aria-label="打开${E(title)}文件夹">↗</a></summary><ul>${children||'<li class="tree-empty">空文件夹</li>'}</ul></details></li>`;
     const categories=D.categories.filter(c=>c!=='全部').map(c=>branch('knowledge/'+c,c,'#/knowledge/'+encodeURIComponent(c),D.articles.filter(a=>a.category===c).map(a=>file(a,'article')).join(''),(page==='knowledge'&&id===c)||activeArticle?.category===c,page==='knowledge'&&!id)).join('');
-    return `<aside class="file-tree" id="directory"><div class="tree-toolbar"><span>文件树</span><div><button type="button" id="tree-expand">全部展开</button><button type="button" id="tree-collapse">全部收起</button></div></div><nav aria-label="文件树"><ul class="tree-root">${branch('knowledge','技术博客','#/knowledge',categories,selected==='knowledge')}${branch('projects','作品集合','#/projects',D.projects.map(a=>file(a,'project')).join(''),selected==='projects')}${branch('interviews','面试经历','#/interviews',D.interviews.map(a=>file(a,'interview')).join(''),selected==='interviews')}</ul></nav></aside>`;
+    const treeNodes=nodes=>nodes.map(n=>{
+      let children=n.children?.length?treeNodes(n.children):n.id==='knowledge'?categories:n.id==='projects'?D.projects.map(a=>file(a,'project')).join(''):n.id==='interviews'?D.interviews.map(a=>file(a,'interview')).join(''):n.id==='essays'?D.essays.map(a=>file(a,'essay')).join(''):'';
+      return branch(n.id,n.title,n.href,children,containsSection(n,selected));
+    }).join('');
+    return `<aside class="file-tree" id="directory"><div class="tree-toolbar"><span>文件树</span><div><button type="button" id="tree-expand">全部展开</button><button type="button" id="tree-collapse">全部收起</button></div></div><nav aria-label="文件树"><ul class="tree-root">${treeNodes(D.navigation)}</ul></nav></aside>`;
   }
-  function projects(){return crumb([['作品集合']])+head('','作品集合','作品说明与代码链接。')+`<div class="file-list"><div class="list-heading"><span>帖子</span><span>${D.projects.length} 篇</span></div>${D.projects.map(p=>entry(p,'project')).join('')||empty('这个文件夹还没有帖子','')}</div>`;}
+  function projects(){return crumb([['职业合集','#/career'],['作品集合']])+head('','作品集合','作品说明与代码链接。')+`<div class="file-list"><div class="list-heading"><span>帖子</span><span>${D.projects.length} 篇</span></div>${D.projects.map(p=>entry(p,'project')).join('')||empty('这个文件夹还没有帖子','')}</div>`;}
   function options(values,all){return `<option value="">${E(all)}</option>`+[...new Set(values)].map(v=>`<option value="${E(v)}">${E(v)}</option>`).join('');}
-  function interviews(){return crumb([['面试经历']])+head('03 / INTERVIEWS','面试经历','问题、回答与复盘。')+`<div class="notice">当前为面经模板，真实记录待补充。</div><div class="filter-bar"><label>企业<select id="filter-company">${options(D.interviews.map(a=>a.company),'全部企业')}</select></label><label>岗位<select id="filter-role">${options(D.interviews.map(a=>a.role),'全部岗位')}</select></label><label>来源<select id="filter-source">${options(D.interviews.map(a=>a.source),'全部来源')}</select></label></div><div class="list-heading"><span>面试记录</span><span id="interview-count"></span></div><div id="interview-list" aria-live="polite"></div>`;}
+  function interviews(){return crumb([['职业合集','#/career'],['面试经历']])+head('03 / INTERVIEWS','面试经历','问题、回答与复盘。')+`<div class="notice">当前为面经模板，真实记录待补充。</div><div class="filter-bar"><label>企业<select id="filter-company">${options(D.interviews.map(a=>a.company),'全部企业')}</select></label><label>岗位<select id="filter-role">${options(D.interviews.map(a=>a.role),'全部岗位')}</select></label><label>来源<select id="filter-source">${options(D.interviews.map(a=>a.source),'全部来源')}</select></label></div><div class="list-heading"><span>面试记录</span><span id="interview-count"></span></div><div id="interview-list" aria-live="polite"></div>`;}
   function applyInterviewFilters(){const list=D.interviews.filter(a=>['company','role','source'].every(k=>!document.getElementById('filter-'+k).value||a[k]===document.getElementById('filter-'+k).value)).sort((a,b)=>b.date.localeCompare(a.date));document.getElementById('interview-count').textContent=`${list.length} 条`;document.getElementById('interview-list').innerHTML=list.map(a=>entry(a,'interview')).join('')||empty();}
   const facts=items=>`<dl class="facts">${items.map(([k,v])=>`<div class="fact"><dt>${E(k)}</dt><dd>${E(v||'待补充')}</dd></div>`).join('')}</dl>`;
-  const allDocs=()=>[...D.articles.map(x=>({...x,type:'article',collection:'技术博客'})),...D.projects.map(x=>({...x,type:'project',collection:'作品集合'})),...D.interviews.map(x=>({...x,type:'interview',collection:'面试经历'}))];
+  const allDocs=()=>[...D.articles.map(x=>({...x,type:'article',collection:'技术博客'})),...D.projects.map(x=>({...x,type:'project',collection:'作品集合'})),...D.interviews.map(x=>({...x,type:'interview',collection:'面试经历'})),...D.essays.map(x=>({...x,type:'essay',collection:'随笔'}))];
   function article(type,id){
     const a=allDocs().find(x=>x.id===id&&x.type===type);if(!a)return notFound();
-    const parent={article:'knowledge',project:'projects',interview:'interviews'}[type];
+    const parent={article:'knowledge',project:'projects',interview:'interviews',essay:'essays'}[type];
     const sections=a.sections||[];
     const body=sections.map((s,i)=>`<section id="section-${i}"><h2>${E(s.title)}</h2>${s.text?`<p>${E(s.text)}</p>`:''}${s.list?`<ul>${s.list.map(x=>`<li>${E(x)}</li>`).join('')}</ul>`:''}${s.code?`<pre><code>${E(s.code)}</code></pre>`:''}</section>`).join('');
     const related=(a.related||[]).map(ref=>{const [type,id]=ref.split('/');return allDocs().find(x=>x.id===id&&x.type===type);}).filter(Boolean);
@@ -87,19 +96,20 @@
     stopScene();
     let parts;try{parts=(location.hash.slice(1).split('?')[0]||'/').split('/').filter(Boolean).map(decodeURIComponent);}catch{parts=['404'];}
     const [page,id,...groups]=parts;
+    const navFolder=navNodes(D.navigation).find(n=>n.href==='#/'+page&&n.children?.length);
     let html;
-    if(!page)html=home();else if(page==='knowledge')html=knowledge(id);else if(page==='projects')html=projects();else if(page==='interviews')html=interviews();else if(['article','project','interview'].includes(page))html=article(page,id);else if(page==='resume')html=resume();else html=notFound();
-    const collection={article:'knowledge',project:'projects',interview:'interviews'}[page]||page;
+    if(!page)html=home();else if(page==='knowledge')html=knowledge(id);else if(page==='projects')html=projects();else if(page==='interviews')html=interviews();else if(page==='essays')html=essays();else if(navFolder)html=folderPage(navFolder);else if(['article','project','interview','essay'].includes(page))html=article(page,id);else if(page==='resume')html=resume();else html=notFound();
+    const collection={article:'knowledge',project:'projects',interview:'interviews',essay:'essays'}[page]||page;
     main.setAttribute('data-page',page||'home');
-    if(Object.hasOwn(labels,collection))html=`<div class="explorer"><button class="mobile-directory" aria-expanded="false" aria-controls="directory" id="directory-toggle">文件树</button>${fileTree(page,id)}<div class="file-pane">${html}</div></div>`;
+    if(Object.hasOwn(labels,collection)||navFolder)html=`<div class="explorer"><button class="mobile-directory" aria-expanded="false" aria-controls="directory" id="directory-toggle">文件树</button>${fileTree(page,id)}<div class="file-pane">${html}</div></div>`;
     main.innerHTML=!page?html:`<div class="route-strip field-${E(Object.hasOwn(labels,collection)?collection:'neutral')}" aria-hidden="true"></div><div class="container">${html}</div>`;
     stopScene=startScene(main.querySelector('#research-field'));
     const setTreeOpen=open=>{main.querySelectorAll('[data-tree-key]').forEach(el=>{el.open=open;treeState.set(el.dataset.treeKey,open);});};
     document.getElementById('tree-expand')?.addEventListener('click',()=>setTreeOpen(true));
     document.getElementById('tree-collapse')?.addEventListener('click',()=>setTreeOpen(false));
     main.querySelectorAll('[data-tree-key]').forEach(el=>el.addEventListener('toggle',()=>{if(el.isConnected)treeState.set(el.dataset.treeKey,el.open);}));
-    const active={article:'knowledge',project:'projects',interview:'interviews'}[page]||page;
-    document.querySelectorAll('#nav a').forEach(a=>{const yes=a.hash==='#/'+active;a.classList.toggle('active',yes);if(yes)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
+    const active={article:'knowledge',project:'projects',interview:'interviews',essay:'essays'}[page]||page;
+    document.getElementById('nav').innerHTML=navigationMarkup(D.navigation,active||'home');
     document.getElementById('nav').classList.remove('open');document.getElementById('menu-toggle').setAttribute('aria-expanded','false');
     document.title=page?(main.querySelector('h1')?.textContent||'CAI')+' · CAI':'CAI';
     if(page==='interviews'){applyInterviewFilters();['company','role','source'].forEach(k=>document.getElementById('filter-'+k).addEventListener('change',applyInterviewFilters));}
@@ -119,6 +129,8 @@
   document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();openSearch();}});
   document.getElementById('menu-toggle').addEventListener('click',e=>{const open=document.getElementById('nav').classList.toggle('open');e.currentTarget.setAttribute('aria-expanded',String(open));});
   document.querySelector('.skip')?.addEventListener('click',e=>{e.preventDefault();main.focus();main.scrollIntoView();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('#nav details[open]').forEach(n=>n.open=false);});
+  document.addEventListener('click',e=>{if(!e.target.closest('#nav'))document.querySelectorAll('#nav details[open]').forEach(n=>n.open=false);});
   document.getElementById('year').textContent=new Date().getFullYear();window.addEventListener('hashchange',()=>{const update=()=>{render();main.focus({preventScroll:true});};if(document.startViewTransition&&!matchMedia('(prefers-reduced-motion: reduce)').matches){document.startViewTransition(update);}else update();});render();
 })();
 

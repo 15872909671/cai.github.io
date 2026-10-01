@@ -257,5 +257,42 @@ window.BLOG = {
       "links": [],
       "related": []
     }
+  ],
+  "essays": [],
+  "navigation": [
+    {
+      "id": "home",
+      "title": "首页",
+      "href": "#/",
+      "children": [
+        {
+          "id": "knowledge",
+          "title": "技术博客",
+          "href": "#/knowledge"
+        }
+      ]
+    },
+    {
+      "id": "career",
+      "title": "职业合集",
+      "href": "#/career",
+      "children": [
+        {
+          "id": "projects",
+          "title": "作品集合",
+          "href": "#/projects"
+        },
+        {
+          "id": "interviews",
+          "title": "面试经历",
+          "href": "#/interviews"
+        }
+      ]
+    },
+    {
+      "id": "essays",
+      "title": "随笔",
+      "href": "#/essays"
+    }
   ]
 };

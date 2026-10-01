@@ -44,6 +44,20 @@ node('tree-expand').events.click();assert.ok(folders.every(f=>f.open));
 assert.match(route('#/knowledge/Go'),/data-tree-key="knowledge\/Go" open/);
 node('main').querySelectorAll=()=>[];
 checks+=4;
+// Nested navigation remains addressable when top-level sections become children.
+assert.match(route('#/career'),/作品集合/);assert.match(node('main').innerHTML,/面试经历/);
+assert.match(route('#/essays'),/这个文件夹还没有帖子/);
+assert.match(node('nav').innerHTML,/href="#\/"[^>]*>首页/);
+assert.match(node('nav').innerHTML,/href="#\/career"/);
+context.BLOG.essays.push({id:'test-essay',title:'随笔测试',summary:'测试正文',date:'2026-10-01',sections:[]});
+assert.match(route('#/essay/test-essay'),/随笔测试/);
+node('search-open').events.click();node('search-input').value='随笔测试';node('search-input').events.input();assert.match(node('search-results').innerHTML,/#\/essay\/test-essay/);
+context.BLOG.essays.pop();
+const originalNav=context.BLOG.navigation;
+context.BLOG.navigation=[originalNav[0],{id:'archive',title:'归档',href:'#/archive',children:[originalNav[1],originalNav[2]]}];
+assert.match(route('#/archive'),/职业合集/);assert.match(route('#/interviews'),/面试经历/);assert.match(node('nav').innerHTML,/展开归档子栏目/);
+context.BLOG.navigation=originalNav;
+checks+=6;
 // The two deployment sources must remain identical.
 for(const file of ['index.html','app.js','content.js','styles.css'])assert.equal(await readFile(file,'utf8'),await readFile('docs/'+file,'utf8'));checks+=4;
 console.log(`PASS: ${checks} route / interaction / escaping / deployment checks. Visual layout is not tested by this harness.`);
