@@ -29,17 +29,20 @@
     }catch(e){session=null;throw e;}
   }
   const confirmationURL=()=>location.origin+location.pathname;
-  async function signup(email,password,username){
+  async function checkRegistration(email,username){
     const status=await request('/rest/v1/rpc/blog_registration_status',{method:'POST',body:{email_address:email,public_name:username}});
     if(status.registered)throw Error('该邮箱已注册，请直接登录。');
     if(status.nameTaken)throw Error('这个公开 ID 已被使用，请换一个。');
-    const result=await request('/auth/v1/signup?redirect_to='+encodeURIComponent(confirmationURL()),{method:'POST',body:{email,password,data:{username}}});
+  }
+  async function signup(email,password,username,displayName){
+    await checkRegistration(email,username);
+    const result=await request('/auth/v1/signup?redirect_to='+encodeURIComponent(confirmationURL()),{method:'POST',body:{email,password,data:{username,...(displayName?{display_name:displayName}:{})}}});
     if(result?.user?.identities?.length===0)throw Error('该邮箱已注册，请直接登录。');
     if(result?.access_token){setSession(result);return {needsConfirmation:false};}
     return {needsConfirmation:true};
   }
   async function verifyRegistration(email,token){setSession(await request('/auth/v1/verify',{method:'POST',body:{email,token,type:'signup'}}));}
-  async function setRegistrationPassword(password){return request('/auth/v1/user',{method:'PUT',auth:true,body:{password}});}
+  async function setRegistrationPassword(password,displayName){return request('/auth/v1/user',{method:'PUT',auth:true,body:{...(password?{password}:{}),...(displayName?{data:{display_name:displayName}}:{})}});}
   async function claimUsername(username){return request('/rest/v1/rpc/blog_claim_username',{method:'POST',body:{public_name:username},auth:true});}
   async function resendConfirmation(email){return request('/auth/v1/resend?redirect_to='+encodeURIComponent(confirmationURL()),{method:'POST',body:{type:'signup',email}});}
   async function logout(){try{if(session)await request('/auth/v1/logout',{method:'POST',auth:true});}finally{session=null;}}
@@ -79,5 +82,5 @@
       }catch{img.alt=(img.alt||'图片')+'（暂时无法加载）';delete img.dataset.loading;}
     }));
   }
-  window.BlogCloud={request,login,signup,setRegistrationPassword,verifyRegistration,claimUsername,resendConfirmation,logout,load,save,createFolder,apply,uploadImage,hydrateImages};
+  window.BlogCloud={request,login,signup,checkRegistration,setRegistrationPassword,verifyRegistration,claimUsername,resendConfirmation,logout,load,save,createFolder,apply,uploadImage,hydrateImages};
 })();
