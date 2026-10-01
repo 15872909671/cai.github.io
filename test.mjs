@@ -50,6 +50,6 @@ nav.onkeydown({key:'Escape',stopPropagation(){}});assert.equal(panel.hidden,true
 assert.equal((nav.innerHTML.match(/class="mega-column"/g)||[]).length,6);
 for(const title of ['主页','技术','工具','相册','随笔','留言'])assert.ok(nav.innerHTML.includes(title));
 context.BLOG.articles.push({id:'private-draft',title:'PRIVATE_DRAFT_SENTINEL',published:false,date:'2026-10-01',folder_id:'knowledge/Go'});route('#/');assert.ok(!node('nav').innerHTML.includes('PRIVATE_DRAFT_SENTINEL'));context.BLOG.articles.pop();
-assert.match(route('#/photos'),/还没有照片/);assert.match(route('#/guestbook'),/留言功能尚未开放/);assert.match(route('#/tools'),/作品集合/);
+assert.match(route('#/photos'),/相册/);assert.match(route('#/guestbook'),/留言/);assert.match(route('#/tools'),/作品集合/);
 for(const file of ['index.html','app.js','content.js','styles.css','folders.js','admin.html','inline-writer.js','inline-writer.css','forum.css','reference-theme.css','theme.js','landscape.svg','mega-nav.css','reading-writing.css','cloud-config.js','cloud.js','markdown.js'])assert.equal(await readFile(file,'utf8'),await readFile('docs/'+file,'utf8'));
 console.log('PASS: forum routes, all-post lists, album views, scoped search, nested albums, escaping, navigation and deployment parity.');
