@@ -18,7 +18,15 @@
   function setSession(data){session={...data,expires_at:Date.now()+(data.expires_in-60)*1000};return session;}
   async function login(email,password){
     setSession(await request('/auth/v1/token?grant_type=password',{method:'POST',body:{email,password}}));
-    try{const rows=await request('/rest/v1/blog_authors?select=user_id&user_id=eq.'+encodeURIComponent(session.user.id),{auth:true});let username='';try{const profiles=await request('/rest/v1/blog_profiles?select=username&user_id=eq.'+encodeURIComponent(session.user.id),{auth:true});username=profiles[0]?.username||'';}catch(e){if(e.status!==404)throw e;}return {...session.user,isAuthor:rows.length>0,username};}catch(e){session=null;throw e;}
+    try{
+      const id=encodeURIComponent(session.user.id);
+      const results=await Promise.allSettled([
+        request('/rest/v1/blog_authors?select=user_id&user_id=eq.'+id,{auth:true}),
+        request('/rest/v1/blog_profiles?select=username&user_id=eq.'+id,{auth:true}).catch(e=>{if(e.status===404)return [];throw e;})
+      ]);
+      const failed=results.find(r=>r.status==='rejected');if(failed)throw failed.reason;
+      return {...session.user,isAuthor:results[0].value.length>0,username:results[1].value[0]?.username||''};
+    }catch(e){session=null;throw e;}
   }
   const confirmationURL=()=>location.origin+location.pathname;
   async function signup(email,password,username){

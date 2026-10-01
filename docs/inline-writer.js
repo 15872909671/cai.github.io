@@ -21,10 +21,18 @@
   const main=document.getElementById('main'),account=document.getElementById('account-button');
   const message=document.createElement('p');message.className='inline-message';message.hidden=true;message.setAttribute('role','status');main.before(message);
   const dialog=document.createElement('dialog');dialog.className='inline-dialog';document.body.append(dialog);
-  function notice(text,error=false){message.hidden=!text;message.textContent=text;message.dataset.error=String(error);}
+  let noticeTimer=null;
+  function notice(text,error=false){clearTimeout(noticeTimer);message.hidden=!text;message.textContent=text;message.dataset.error=String(error);if(text)noticeTimer=setTimeout(()=>{message.hidden=true;message.textContent='';},error?8000:3500);}
   function guard(){if(busy)return false;if(!dirty)return true;backup();return confirm('修改尚未发布，离开编辑？设备草稿会保留。');}
   function allowNavigation(){if(!guard()){history.replaceState(null,'',lastHash||'#/');return false;}editor=null;dirty=false;lastHash=location.hash;return true;}
-  async function task(action){if(busy)return;busy=true;main.inert=true;dialog.querySelectorAll('input,select,button').forEach(el=>el.disabled=true);try{await action();}catch(e){notice(e.name==='TimeoutError'?'请求超时，编辑内容仍保留，请重试。':e.message,true);if(dialog.open){const error=dialog.querySelector('#login-error');if(error)error.textContent=e.message;}}finally{busy=false;main.inert=false;dialog.querySelectorAll('input,select,button').forEach(el=>el.disabled=false);}}
+  function authProgress(text){const button=dialog.querySelector('button[type="submit"],button.primary');if(button){button.dataset.idleText??=button.textContent;button.textContent=text;}const status=dialog.querySelector('#login-error');if(status)status.textContent='';}
+  async function task(action){
+    if(busy)return;busy=true;const modal=dialog.open,controls=[...dialog.querySelectorAll('input,select,button')].map(el=>[el,el.disabled]);
+    main.inert=!modal;dialog.setAttribute('aria-busy','true');controls.forEach(([el])=>el.disabled=true);
+    try{await action();}catch(e){const text=e.name==='TimeoutError'?'网络响应较慢，请重试；已填写的内容仍保留。':e.message;
+      if(dialog.open){const error=dialog.querySelector('#login-error');if(error)error.textContent=text;}else notice(text,true);
+    }finally{busy=false;main.inert=false;dialog.removeAttribute('aria-busy');controls.forEach(([el,disabled])=>{if(el.isConnected)el.disabled=disabled;});dialog.querySelectorAll('[data-idle-text]').forEach(el=>{el.textContent=el.dataset.idleText;delete el.dataset.idleText;});}
+  }
   function apply(){C.apply(D,remote,author);window.refreshBlog();}
   async function reload(){remote=await C.load(author);apply();}
   function context(){
@@ -64,9 +72,9 @@
       if(registering&&password!==form.elements.confirmPassword.value){dialog.querySelector('#login-error').textContent='两次输入的密码不一致。';return;}
       if(!form.reportValidity())return;
       task(async()=>{
-        if(registering){if(sentEmail!==email.toLowerCase()){dialog.querySelector('#login-error').textContent='请先为当前邮箱获取验证码。';return;}if(!verified){await C.verifyRegistration(sentEmail,form.elements.code.value.trim());verified=true;}if(savedPassword!==password){await C.setRegistrationPassword(password);savedPassword=password;}await C.claimUsername(form.elements.username.value.trim());await C.logout();form.elements.password.value='';form.elements.confirmPassword.value='';login(afterLogin,'login',email);dialog.querySelector('#login-error').textContent='注册成功，请登录。';return;}
-        let user;try{user=await C.login(email,password);}finally{form.elements.password.value='';}
-        const loaded=await C.load(user.isAuthor===true);userId=user.id;author=user.isAuthor===true;remote=loaded;account.textContent=user.username?'@'+user.username+' · 退出':'退出登录';dialog.close();editor=null;apply();notice('已登录。');if(!user.username&&user.user_metadata?.username)verification(email,user.user_metadata.username,true,afterLogin);
+        if(registering){if(sentEmail!==email.toLowerCase()){dialog.querySelector('#login-error').textContent='请先为当前邮箱获取验证码。';return;}if(!verified){authProgress('正在验证…');await C.verifyRegistration(sentEmail,form.elements.code.value.trim());verified=true;}authProgress('正在保存账号…');const results=await Promise.allSettled([savedPassword===password?Promise.resolve():C.setRegistrationPassword(password).then(()=>{savedPassword=password;}),C.claimUsername(form.elements.username.value.trim())]);const failed=results.find(r=>r.status==='rejected');if(failed)throw failed.reason;authProgress('即将完成…');await C.logout();form.elements.password.value='';form.elements.confirmPassword.value='';login(afterLogin,'login',email);dialog.querySelector('#login-error').textContent='注册成功，请登录。';return;}
+        authProgress('正在登录…');let user;try{user=await C.login(email,password);}finally{form.elements.password.value='';}
+        const loaded=user.isAuthor===true?await C.load(true):remote;userId=user.id;author=user.isAuthor===true;remote=loaded;account.textContent=user.username?'@'+user.username+' · 退出':'退出登录';dialog.close();editor=null;apply();notice('已登录。');if(!user.username&&user.user_metadata?.username)verification(email,user.user_metadata.username,true,afterLogin);
       }).then(()=>{if(userId&&!registering)afterLogin?.();});
     });
   }
@@ -75,7 +83,7 @@
     popup(`<form id="verify-registration"><h2>${verified?'设置公开 ID':'验证邮箱'}</h2><p>${verified?'邮箱已验证，请完成公开 ID 设置。':'验证码已发送至 '+E(email)}</p><label>公开 ID<input name="username" value="${E(username)}" pattern="[A-Za-z0-9_]{3,24}" minlength="3" maxlength="24" required></label><label>邮箱验证码<input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6,10}" maxlength="10" ${verified?'disabled':'required'}></label><div class="dialog-actions"><button class="primary">完成注册</button><button type="button" data-resend-code>重新发送</button><button type="button" data-close>取消</button></div></form>`);
     const form=dialog.querySelector('form');
     form.querySelector('[data-resend-code]').onclick=()=>{if(busy)return;if(Date.now()<nextSend){dialog.querySelector('#login-error').textContent='请在 '+Math.ceil((nextSend-Date.now())/1000)+' 秒后重新发送。';return;}task(async()=>{await C.resendConfirmation(email);nextSend=Date.now()+60000;dialog.querySelector('#login-error').textContent='验证码已重新发送。';});};
-    form.onsubmit=e=>{e.preventDefault();if(!form.reportValidity())return;task(async()=>{if(!verified){await C.verifyRegistration(email,form.elements.code.value.trim());verified=true;form.elements.code.required=false;form.elements.code.value='';}
+    form.onsubmit=e=>{e.preventDefault();if(!form.reportValidity())return;task(async()=>{authProgress('正在验证…');if(!verified){await C.verifyRegistration(email,form.elements.code.value.trim());verified=true;form.elements.code.required=false;form.elements.code.value='';}
       const publicName=await C.claimUsername(form.elements.username.value.trim());if(userId){account.textContent='@'+publicName+' · 退出';dialog.close();notice('公开 ID 已保存。');return;}await C.logout();login(afterLogin,'login',email);dialog.querySelector('#login-error').textContent='注册成功，请登录。';
     });};
   }
