@@ -1,2 +1,5 @@
 
 .local-private/
+
+.test-runtime/
+authorize-blog-author.sql

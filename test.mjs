@@ -20,7 +20,7 @@ const node=id=>{if(!nodes.has(id))nodes.set(id,new Element());return nodes.get(i
 const listeners={};
 const context={console,URLSearchParams,document:{getElementById:node,querySelector:()=>null,querySelectorAll:()=>[],addEventListener:(k,v)=>listeners[k]=v},location:{hash:'#/'},matchMedia:()=>({matches:true})};
 context.window=context;context.scrollTo=()=>{};context.addEventListener=(k,v)=>listeners[k]=v;
-vm.createContext(context);vm.runInContext(await readFile('content.js','utf8'),context);vm.runInContext(await readFile('folders.js','utf8'),context);vm.runInContext(await readFile('app.js','utf8'),context);
+vm.createContext(context);vm.runInContext(await readFile('content.js','utf8'),context);vm.runInContext(await readFile('folders.js','utf8'),context);vm.runInContext(await readFile('markdown.js','utf8'),context);vm.runInContext(await readFile('app.js','utf8'),context);
 let checks=0;
 const route=hash=>{context.location.hash=hash;listeners.hashchange();checks++;return node('main').innerHTML;};
 assert.match(route('#/'),/三个集合/);
@@ -80,5 +80,5 @@ navItem.events.pointerenter({pointerType:'mouse'});navItem.events.focusout({rela
 context.document.querySelectorAll=()=>[];
 checks+=11;
 // The two deployment sources must remain identical.
-for(const file of ['index.html','app.js','content.js','styles.css','folders.js'])assert.equal(await readFile(file,'utf8'),await readFile('docs/'+file,'utf8'));checks+=4;
+for(const file of ['index.html','app.js','content.js','styles.css','folders.js','admin.html','admin.js','admin.css','cloud-config.js','cloud.js','cloud-public.js','markdown.js'])assert.equal(await readFile(file,'utf8'),await readFile('docs/'+file,'utf8'));checks+=4;
 console.log(`PASS: ${checks} route / interaction / escaping / deployment checks. Visual layout is not tested by this harness.`);

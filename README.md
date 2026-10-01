@@ -21,7 +21,7 @@ GitHub Pages 使用 main 分支。根目录和 docs/ 均包含同一份生成站
 
 哈希路由支持直接打开文章、浏览器前进后退和 GitHub Pages 子目录路径。全站搜索支持标题、标签和正文，Ctrl/Cmd K 打开、Esc 关闭。
 
-这是公开、只读的静态内容网站，不包含账号注册、在线编辑、服务端数据库或私人帖子。不要在仓库内提交私密档案。简历目前为待补充状态。
+网站使用 GitHub Pages 托管前端，写作后台使用 Supabase Auth 和数据库；数据库完成初始化后才启用在线读取。不要在仓库内提交私密档案。简历目前为待补充状态。
 
 
 首页动态遵循系统减少动态偏好；离开首页或隐藏标签页时停止动画。Canvas 不可用时显示静态线条图形。
@@ -38,4 +38,4 @@ GitHub Pages 使用 main 分支。根目录和 docs/ 均包含同一份生成站
 
 可在 `content/site.json` 中添加 `folders` 数组，每项有 `id`、`name`、`collection` 和 `parent_id`（根文件夹填 null）。collection 可为 knowledge、projects、interviews、essays。帖子使用 `folder_id` 指定父文件夹，未指定则放在栏目根目录。文件夹路由为 `#/folder/<编码后的 id>`，支持嵌套。
 
-不设置 folders 时自动把现有技术分类转换为文件夹，保留旧地址。登录与在线发帖需要另行接入后端服务；当前静态页面不冒充已完成发布。
+不设置 folders 时自动把现有技术分类转换为文件夹，保留旧地址。在线写作入口为 `admin.html`。初始化方法见 `supabase/README.md`。
