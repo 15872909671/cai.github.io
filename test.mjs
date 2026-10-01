@@ -35,6 +35,15 @@ route('#/interviews');node('filter-role').value='Go 后端';node('filter-role').
 node('search-open').events.click();assert.equal(node('search-dialog').open,true);node('search-input').value='Raft';node('search-input').events.input();assert.match(node('search-results').innerHTML,/读懂 Raft/);assert.doesNotMatch(node('search-results').innerHTML,/实验室/);node('search-input').value='zz-no-results-zz';node('search-input').events.input();assert.match(node('search-results').innerHTML,/没有找到/);checks+=3;
 assert.match(route('#/article/missing'),/这一页还没有写下/);assert.match(route('#/knowledge/%ZZ'),/这一页还没有写下/);
 context.BLOG.articles[0].title='<img src=x onerror=alert(1)>';assert.ok(route('#/article/'+context.BLOG.articles[0].id).includes('&lt;img'));assert.ok(!node('main').innerHTML.includes('<img src=x'));checks++;
+// Folder controls collapse and expand real rendered branches without navigating.
+const folders=['knowledge','knowledge/Go'].map(key=>{const el=new Element();el.dataset={treeKey:key};el.open=true;el.isConnected=true;return el;});
+node('main').querySelectorAll=selector=>selector==='[data-tree-key]'?folders:[];
+route('#/knowledge');node('tree-collapse').events.click();assert.ok(folders.every(f=>!f.open));
+assert.match(route('#/knowledge/Go'),/data-tree-key="knowledge\/Go" ><summary>/);
+node('tree-expand').events.click();assert.ok(folders.every(f=>f.open));
+assert.match(route('#/knowledge/Go'),/data-tree-key="knowledge\/Go" open/);
+node('main').querySelectorAll=()=>[];
+checks+=4;
 // The two deployment sources must remain identical.
 for(const file of ['index.html','app.js','content.js','styles.css'])assert.equal(await readFile(file,'utf8'),await readFile('docs/'+file,'utf8'));checks+=4;
 console.log(`PASS: ${checks} route / interaction / escaping / deployment checks. Visual layout is not tested by this harness.`);
