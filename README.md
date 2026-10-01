@@ -38,4 +38,4 @@ GitHub Pages 使用 main 分支。根目录和 docs/ 均包含同一份生成站
 
 可在 `content/site.json` 中添加 `folders` 数组，每项有 `id`、`name`、`collection` 和 `parent_id`（根文件夹填 null）。collection 可为 knowledge、projects、interviews、essays。帖子使用 `folder_id` 指定父文件夹，未指定则放在栏目根目录。文件夹路由为 `#/folder/<编码后的 id>`，支持嵌套。
 
-不设置 folders 时自动把现有技术分类转换为文件夹，保留旧地址。在线写作入口为 `admin.html`。初始化方法见 `supabase/README.md`。
+不设置 folders 时自动把现有技术分类转换为文件夹，保留旧地址。顶栏登录后直接在文件树中新建和编辑，右侧正文区域就是编辑器。原 `admin.html` 地址自动返回博客。初始化方法见 `supabase/README.md`。

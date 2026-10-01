@@ -7,6 +7,7 @@ await db.exec(`create role anon; create role authenticated; create schema auth; 
 await db.exec(await readFile('supabase/schema.sql','utf8'));
 await db.exec(await readFile('supabase/schema.sql','utf8')); // Migration is rerunnable.
 await db.exec(await readFile('supabase/seed.sql','utf8'));
+await db.exec(await readFile('supabase/file-operations.sql','utf8'));
 const owner='00000000-0000-0000-0000-000000000001',other='00000000-0000-0000-0000-000000000002';
 await db.exec(`insert into auth.users(id) values('${owner}'),('${other}');insert into public.blog_authors values('${owner}');`);
 async function role(name,id=''){await db.exec('reset role');await db.query("select set_config('request.jwt.claim.sub',$1,false)",[id]);await db.exec('set role '+name);}
@@ -30,6 +31,18 @@ assert.equal((await db.query("update blog_posts set body='stale' where id='priva
 await role('anon');assert.equal((await db.query("select * from blog_posts where id='private-test'")).rows.length,1);
 await role('authenticated',owner);await db.exec("update blog_posts set published=false where id='private-test'");
 await role('anon');assert.equal((await db.query("select * from blog_posts where id='private-test'")).rows.length,0);
+await assert.rejects(db.query("select blog_file_operation('delete_post','private-test',3)"));
+await role('authenticated',other);
+await assert.rejects(db.query("select blog_file_operation('delete_post','private-test',3)"));
+await role('authenticated',owner);
+await assert.rejects(db.query("select blog_file_operation('move_folder','test-root',1,null,'test-child')"));
+await assert.rejects(db.query("select blog_file_operation('delete_folder','test-child',1)"));
+await db.query("select blog_file_operation('rename_folder','test-child',1,'Renamed')");
+await assert.rejects(db.query("select blog_file_operation('rename_folder','test-child',1,'Stale')"));
+await db.query("select blog_file_operation('move_folder','test-child',2,null,null)");
+await db.query("select blog_file_operation('delete_post','private-test',3)");
+await db.query("select blog_file_operation('delete_folder','test-child',3)");
+assert.equal((await db.query("select * from blog_folders where id='test-child'")).rows.length,0);
 await db.close();
 const context={};context.window=context;vm.createContext(context);vm.runInContext(await readFile('markdown.js','utf8'),context);
 const render=context.BlogMarkdown.render;

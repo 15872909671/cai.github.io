@@ -5,7 +5,7 @@
   const safeURL=u=>typeof u==='string'&&(/^(https?:\/\/|#\/)/.test(u))?E(u):'#/';
   const labels={knowledge:'技术博客',projects:'作品集合',interviews:'面试经历',career:'职业合集',essays:'随笔'};
   const tags=arr=>(arr||[]).map(t=>`<span class="tag">${E(t)}</span>`).join('');
-  const badge=a=>`<span class="badge ${a.demo===true?'demo':''}">${E(a.demo===true?'示例模板':a.kind||a.status||'帖子')}</span>`;
+  const badge=a=>a.published===false?'<span class="badge demo">草稿</span>':`<span class="badge ${a.demo===true?'demo':''}">${E(a.demo===true?'示例模板':a.kind||a.status||'帖子')}</span>`;
   const empty=(title='还没有匹配的内容',text='换个关键词或筛选条件试试。')=>`<div class="empty"><h2>${E(title)}</h2><p>${E(text)}</p></div>`;
   const crumb=items=>`<div class="breadcrumb"><a href="#/">首页</a>${items.map(([name,url])=>`<span>/</span>${url?`<a href="${safeURL(url)}">${E(name)}</a>`:`<span>${E(name)}</span>`}`).join('')}</div>`;
   const head=(en,title,desc)=>`<div class="page-head"><h1>${E(title)}</h1></div>`;
@@ -40,7 +40,7 @@
     const activePost=allDocs().find(a=>a.type===page&&a.id===id);
     const activeFolder=page==='folder'?id:activePost?.folder_id||(page==='knowledge'&&id?'knowledge/'+id:null);
     const ancestry=F.ancestors(D,activeFolder).map(f=>f.id);
-    const file=(a,type)=>`<li><a class="tree-file ${page===type&&id===a.id?'selected':''}" href="${routeFor(type,a.id)}" ${page===type&&id===a.id?'aria-current="page"':''}><span class="file-symbol" aria-hidden="true"></span><span>${E(a.title)}</span></a></li>`;
+    const file=(a,type)=>`<li><a class="tree-file ${page===type&&id===a.id?'selected':''}" href="${routeFor(type,a.id)}" ${page===type&&id===a.id?'aria-current="page"':''}><span class="file-symbol" aria-hidden="true"></span><span>${E(a.title)}${a.published===false?'<small class="draft-mark">草稿</small>':''}</span></a></li>`;
     const branch=(key,title,url,children,reveal,defaultOpen=false)=>`<li><details data-tree-key="${E(key)}" ${treeState.get(key)??(reveal||defaultOpen)?'open':''}><summary><span class="tree-caret" aria-hidden="true">›</span><span class="folder-symbol" aria-hidden="true"></span><span class="tree-folder-name">${E(title)}</span><a class="tree-open" href="${safeURL(url)}" aria-label="打开${E(title)}文件夹">↗</a></summary><ul>${children||'<li class="tree-empty">空文件夹</li>'}</ul></details></li>`;
     const folderNodes=(collection,parent=null)=>F.children(D,collection,parent).map(f=>branch(f.id,f.name,folderURL(f),folderNodes(collection,f.id),ancestry.includes(f.id),page===collection&&!id)).join('')+F.posts(D,collection,parent).map(p=>file(p,F.types[collection])).join('');
     const treeNodes=nodes=>nodes.map(n=>{
@@ -131,6 +131,7 @@
     document.getElementById('directory-toggle')?.addEventListener('click',e=>{const open=document.getElementById('directory').classList.toggle('is-open');e.currentTarget.setAttribute('aria-expanded',String(open));});
     document.getElementById('print-resume')?.addEventListener('click',()=>window.print());
     main.querySelectorAll('[data-section]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();document.getElementById('section-'+a.dataset.section)?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});}));
+    window.InlineWriter?.mount();
     const section=new URLSearchParams(location.hash.split('?')[1]||'').get('section');
     if(section!==null)document.getElementById('section-'+section)?.scrollIntoView();else window.scrollTo(0,0);
   }
@@ -146,6 +147,6 @@
   document.querySelector('.skip')?.addEventListener('click',e=>{e.preventDefault();main.focus();main.scrollIntoView();});
   document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('#nav details[open]').forEach(n=>n.open=false);});
   document.addEventListener('click',e=>{if(!e.target.closest('#nav'))document.querySelectorAll('#nav details[open]').forEach(n=>n.open=false);});
-  document.getElementById('year').textContent=new Date().getFullYear();window.addEventListener('hashchange',()=>{const update=()=>{render();main.focus({preventScroll:true});};if(document.startViewTransition&&!matchMedia('(prefers-reduced-motion: reduce)').matches){document.startViewTransition(update);}else update();});window.refreshBlog=render;render();
+  document.getElementById('year').textContent=new Date().getFullYear();window.addEventListener('hashchange',()=>{if(window.InlineWriter?.allowNavigation()===false)return;const update=()=>{render();main.focus({preventScroll:true});};if(document.startViewTransition&&!matchMedia('(prefers-reduced-motion: reduce)').matches){document.startViewTransition(update);}else update();});window.refreshBlog=render;render();
 })();
 

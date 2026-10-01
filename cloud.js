@@ -32,12 +32,12 @@
     if(!result?.length)throw Error('此帖子已在其他窗口修改。请先下载当前内容，再重新载入帖子。');return result[0];
   }
   const createFolder=folder=>request('/rest/v1/blog_folders',{method:'POST',auth:true,body:folder,headers:{Prefer:'return=representation'}});
-  function apply(data,remote){
+  function apply(data,remote,includeDrafts=false){
     data.folders=remote.folders;
     for(const key of Object.values(window.Folders.keys))data[key]=[];
-    for(const p of remote.posts.filter(p=>p.published)){
+    for(const p of remote.posts.filter(p=>includeDrafts||p.published)){
       const key=window.Folders.keys[p.collection];if(!key)continue;
-      data[key].push({...p.metadata,id:p.id,title:p.title,summary:p.summary,markdown:p.body,folder_id:p.folder_id,date:p.created_at.slice(0,10),category:window.Folders.ancestors(data,p.folder_id)[0]?.name||'帖子'});
+      data[key].push({...p.metadata,id:p.id,title:p.title,published:p.published,summary:p.summary,markdown:p.body,folder_id:p.folder_id,date:p.created_at.slice(0,10),category:window.Folders.ancestors(data,p.folder_id)[0]?.name||'帖子'});
     }
     data.categories=['全部',...window.Folders.children(data,'knowledge').map(f=>f.name)];
   }

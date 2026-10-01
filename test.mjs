@@ -80,5 +80,5 @@ navItem.events.pointerenter({pointerType:'mouse'});navItem.events.focusout({rela
 context.document.querySelectorAll=()=>[];
 checks+=11;
 // The two deployment sources must remain identical.
-for(const file of ['index.html','app.js','content.js','styles.css','folders.js','admin.html','admin.js','admin.css','cloud-config.js','cloud.js','cloud-public.js','markdown.js'])assert.equal(await readFile(file,'utf8'),await readFile('docs/'+file,'utf8'));checks+=4;
+for(const file of ['index.html','app.js','content.js','styles.css','folders.js','admin.html','inline-writer.js','inline-writer.css','cloud-config.js','cloud.js','markdown.js'])assert.equal(await readFile(file,'utf8'),await readFile('docs/'+file,'utf8'));checks+=4;
 console.log(`PASS: ${checks} route / interaction / escaping / deployment checks. Visual layout is not tested by this harness.`);
