@@ -156,7 +156,7 @@
       else if(page==='career'){show('职业合集','<h1>职业合集</h1><div class="folder-chips"><a href="#/projects">作品集</a><a href="#/interviews">面试经历</a></div>');}
       else if(!page||page==='home'||page==='posts'||boards[page]){
         await listing(query,null,boards[page]?page:null,ticket);
-        if((!page||page==='home')&&ticket===epoch){document.body.classList.add('is-home');const hero=document.createElement('section');hero.className='community-hero';hero.innerHTML='<h1>CAI</h1><div><a href="#/knowledge">技术博客</a><a href="#/projects">作品集</a><a href="#/essays">随笔</a></div>';main.prepend(hero);}
+        if((!page||page==='home')&&ticket===epoch){document.body.classList.add('is-home');const hero=document.createElement('div');hero.className='community-hero';hero.setAttribute('aria-hidden','true');main.prepend(hero);}
       }else throw Error('页面不存在。');
     }catch(e){if(ticket===epoch)errorPage(e);}finally{if(ticket===epoch)main.removeAttribute('aria-busy');}
   }
