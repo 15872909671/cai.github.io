@@ -18,7 +18,7 @@
   }
   const feed=params=>rpc('blog_feed',{who:null,board:null,folder:null,search:'',drafts:false,page_number:1,...params});
   const folders=(owner,board)=>C.request('/rest/v1/blog_folders?select=*&owner_id=eq.'+encode(owner)+(board?'&collection=eq.'+encode(board):'')+'&order=name.asc&limit=100',{auth:!!C.currentUser()});
-  const titles=(owner,board)=>C.request('/rest/v1/blog_posts?select=id,title,folder_id,published,collection&owner_id=eq.'+encode(owner)+'&collection=eq.'+encode(board)+(C.currentUser()?.id===owner?'':'&published=eq.true')+'&order=title.asc&limit=100',{auth:!!C.currentUser()});
+  const titles=(owner,board)=>C.request('/rest/v1/blog_posts?select=id,title,folder_id,published,collection&owner_id=eq.'+encode(owner)+(board?'&collection=eq.'+encode(board):'')+(C.currentUser()?.id===owner?'':'&published=eq.true')+'&order=title.asc&limit=100',{auth:!!C.currentUser()});
   async function commentPage({postId=null,spaceId=null,page=1}){
     const query='post_id='+(postId?'eq.'+encode(postId):'is.null')+'&space_id='+(spaceId?'eq.'+encode(spaceId):'is.null');
     const rows=await C.request('/rest/v1/blog_comments?select=*&'+query+'&order=created_at.desc,id.desc&limit=21&offset='+((page-1)*20),{auth:!!C.currentUser()});

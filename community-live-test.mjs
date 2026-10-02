@@ -14,7 +14,7 @@ try{
  await ready();assert.ok(d.querySelector('.community-feed'));const cards=d.querySelectorAll('.community-post');assert.ok(cards.length>0);assert.ok(cards.length<=20);
  const post=cards[0].querySelector('a[href^="#/post/"]').getAttribute('href'),author=cards[0].querySelector('.user-link').getAttribute('href');
  await go(post);assert.ok(d.querySelector('.article-body'));assert.ok(d.querySelector('[data-comment-login]'));assert.equal(d.querySelector('[data-edit]'),null);
- await go(author+'?board=knowledge');assert.ok(d.querySelector('.space-card'));assert.ok(d.querySelector('.space-tree'));
+ await go(author+'?board=knowledge');assert.ok(d.querySelector('.author-file-tree'));assert.equal(d.querySelector('[data-folder-create]'),null);assert.equal(d.querySelector('#nav .mega-tab[href="#/tools"]')!==null,true);
  await go('#/guestbook');assert.ok(d.querySelector('[data-comment-login]'));assert.equal(d.querySelector('#comment-form'),null);
  await go('#/tools');assert.ok(d.querySelector('.community-feed'));await go('#/photos');assert.ok(d.querySelector('.community-feed'));
  console.log('PASS: deployed scripts + real Supabase render public feed, post comments, author space/file tree, guestbook, tools and photos without anonymous editing.');
