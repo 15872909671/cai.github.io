@@ -1,6 +1,7 @@
 import {JSDOM} from './.test-runtime/node_modules/jsdom/lib/api.js';
 import {readFile,writeFile} from 'node:fs/promises';
 import assert from 'node:assert/strict';
+assert.doesNotMatch(await readFile('styles.css','utf8'),/(^|[{},])nav(?=[\s.{:#])/,'Header rules must not affect article navigation or pagination');
 const html=await readFile('community-preview.html','utf8');
 const dom=new JSDOM(html,{url:'https://knaios.github.io/cai.github.io/#/posts',runScripts:'outside-only'}),w=dom.window,d=w.document;
 w.structuredClone=structuredClone;w.scrollTo=()=>{};w.matchMedia=()=>({matches:true});w.HTMLElement.prototype.scrollIntoView=()=>{};
