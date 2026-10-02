@@ -24,6 +24,8 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
 .header-inner{max-width:1440px;margin:auto}
 .header{border-bottom:1px solid var(--line);box-shadow:none}
 .header #nav .mega-tab{color:var(--ref-ink)}
+.is-home:not(.header-scrolled) .header #nav .mega-tab{color:#fff}
+.community-container>.file-pane>h1,.community-container>h1,.community-layout>.file-pane>h1{font-size:26px;line-height:1.5;margin:0 0 20px;letter-spacing:-.4px}
 .header .account-button{max-width:140px;overflow:hidden;text-overflow:ellipsis;border-radius:8px;font-size:13px}
 .header #nav .mega-tab[aria-current=page]{color:var(--ref-blue);position:relative}
 .header #nav .mega-tab[aria-current=page]:after{content:'';position:absolute;bottom:3px;left:12px;right:12px;height:2px;background:currentColor;border-radius:2px}

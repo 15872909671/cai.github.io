@@ -8,7 +8,7 @@
   const modal=document.createElement('dialog');modal.className='inline-dialog';document.body.append(modal);
   const enc=encodeURIComponent,who=()=>C.currentUser()?.id;
   const safe=u=>/^https?:\/\//i.test(u||'')?E(u):'';
-  const displayName=p=>p?.display_name||(/^u_[a-f0-9]{20,32}$/.test(p?.username||'')?'未设置昵称':p?.username)||'作者';
+  const displayName=p=>p?.display_name||(/^u_[a-f0-9]{20,32}$/.test(p?.username||'')?'作者':p?.username)||'作者';
   const avatar=p=>`<span class="user-avatar" aria-hidden="true">${E(displayName(p).slice(0,1))}</span>`;
   const userLink=p=>p?`<a class="user-link" href="#/u/${enc(p.username)}" title="查看作者空间"><span class="user-avatar" aria-hidden="true">${E(displayName(p).slice(0,1))}</span><span>${E(displayName(p))}</span></a>`:'<span>作者</span>';
   const date=t=>new Date(t).toLocaleDateString('zh-CN');
