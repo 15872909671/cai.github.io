@@ -41,7 +41,7 @@
   }
   async function upload(file){
     const blob=await compressImage(file),path=await rpc('blog_reserve_image',{file_bytes:blob.size},true);
-    try{await C.request('/storage/v1/object/blog-images/'+path,{method:'POST',auth:true,binary:true,body:blob,headers:{'Content-Type':'image/webp','x-upsert':'false'}});return path;}
+    try{await C.request('/storage/v1/object/blog-images/'+path,{method:'POST',auth:true,binary:true,body:blob,headers:{'Content-Type':'image/webp','x-upsert':'false'}});try{await rpc('blog_settle_images',{},true);}catch{/* Uploaded file stays usable; usage refresh retries settlement. */}return path;}
     catch(e){try{await rpc('blog_release_image',{target:path},true);}catch{}throw e;}
   }
   async function removeImage(path){
@@ -52,6 +52,6 @@
   async function saveProfile(data){return C.request('/rest/v1/blog_profiles?user_id=eq.'+encode(C.currentUser().id),{method:'PATCH',auth:true,body:data,headers:{Prefer:'return=representation'}});}
   async function comment(data){return C.request('/rest/v1/blog_comments',{method:'POST',auth:true,body:data,headers:{Prefer:'return=representation'}});}
   window.CommunityAPI={rpc,profile,ownProfile,post,feed,folders,titles,commentPage,comment,compressImage,upload,removeImage,saveProfile,
-    usage:()=>rpc('blog_usage',{},true),
+    usage:async()=>{try{await rpc('blog_settle_images',{},true);}catch{}return rpc('blog_usage',{},true);},
     media:()=>C.request('/rest/v1/blog_media?select=*&order=created_at.desc&limit=1000',{auth:true})};
 })();

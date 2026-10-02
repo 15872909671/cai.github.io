@@ -17,11 +17,13 @@ GitHub Pages 前端 + Supabase 邮箱认证、PostgreSQL 与私有图片存储�
 
 已有项目在 Supabase SQL Editor 执行 `supabase/community.sql`。脚本在单一原作者存在时保留并归属旧数据，可重复执行；若旧数据归属不明确会回滚报错。
 
-执行后不要再运行旧的 schema.sql、images.sql 或 file-operations.sql，它们会恢复旧版权限。全新项目应先依次执行 schema.sql、file-operations.sql、registration.sql、images.sql，最后执行 community.sql。
+图片兼容补丁：执行 `supabase/community-storage-fix.sql`，修正 Storage 预检查阶段没有 size 元数据的问题。每次上传先按 1 MB 预留额度，成功后按服务端实际大小结算；若结算暂时失败，在个人资料页查看用量时会重试。接近容量上限时需至少留出 1 MB 才能发起新上传。旧图片保留，新上传由存储桶限制在 1 MB 内。
+
+执行后不要再运行旧的 schema.sql、images.sql 或 file-operations.sql，它们会恢复旧版权限。全新项目应先依次执行 schema.sql、file-operations.sql、registration.sql、images.sql，最后执行 community.sql 和 community-storage-fix.sql。
 
 `node build.mjs --community` 会先检查线上迁移及列表接口，成功后更新根目录及 docs 的发布入口。GitHub Pages 使用 main / docs；两份发布文件保持一致。旧的 app.js 和 inline-writer.js 留作历史源码，社区入口不加载它们。
 
-验证命令：`node community-db-test.mjs`、`node community-ui-test.mjs`、`node community-auth-test.mjs`、`node cloud-test.mjs`。测试依赖位于本地 .test-runtime/node_modules（jsdom、@electric-sql/pglite），不上传发布目录。
+验证命令：`node community-db-test.mjs`、`node community-ui-test.mjs`、`node community-auth-test.mjs`、`node community-image-test.mjs`、`node cloud-test.mjs`。测试依赖位于本地 .test-runtime/node_modules（jsdom、@electric-sql/pglite），不上传发布目录。
 
 本地数据库测试与模拟网络界面测试不能替代真实邮件投递、真实账号上传及移动端视觉验收。正式验收还需在线上用两个已验证账号检查发帖、评论、图片上传与互相隔离。
 

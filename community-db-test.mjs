@@ -13,6 +13,8 @@ for(const file of ['schema','file-operations','registration','images'])await db.
 const A='00000000-0000-0000-0000-000000000001',B='00000000-0000-0000-0000-000000000002',U='00000000-0000-0000-0000-000000000003',N='00000000-0000-0000-0000-000000000004';
 await db.exec(`insert into auth.users(id,email,email_confirmed_at) values('${A}','a@test.example',now()),('${B}','b@test.example',now()),('${U}','u@test.example',null),('${N}','n@test.example',now());update auth.users set is_anonymous=true where id='${N}';insert into blog_authors values('${A}');insert into blog_folders(id,collection,name) values('legacy','knowledge','Legacy');insert into blog_posts(id,collection,folder_id,title,published) values('legacy-post','knowledge','legacy','Preserved',true);`);
 const migration=await readFile('supabase/community.sql','utf8');await db.exec(migration);await db.exec(migration);
+const storageFix=await readFile('supabase/community-storage-fix.sql','utf8');await db.exec(storageFix);await db.exec(storageFix);
+assert.equal((await db.query("select file_size_limit from storage.buckets where id='blog-images'")).rows[0].file_size_limit,1048576);
 assert.equal((await db.query("select owner_id from blog_posts where id='legacy-post'")).rows[0].owner_id,A);
 async function role(name,id=''){await db.exec('reset role');await db.query("select set_config('request.jwt.claim.sub',$1,false)",[id]);await db.exec('set role '+name);}
 async function fail(sql,values=[]){await assert.rejects(db.query(sql,values));}
@@ -58,8 +60,11 @@ await db.query("update blog_profiles set display_name='作者 A',bio='Bio' where
 assert.equal((await db.query("update blog_profiles set display_name='Hacked' where user_id=$1 returning user_id",[B])).rows.length,0);
 await fail("update blog_profiles set username='stolen'");
 const image=(await db.query('select blog_reserve_image(1000) as path')).rows[0].path;
-await fail("insert into storage.objects(bucket_id,name,metadata) values('blog-images',$1,'{\"size\":1001}')",[image]);
+assert.equal((await db.query('select blog_usage() as data')).rows[0].data.imageBytes,1048576);
+// Storage preflight tests RLS before server-generated size exists, then rolls back.
+await db.exec('begin');await db.query("insert into storage.objects(bucket_id,name) values('blog-images',$1)",[image]);await db.exec('rollback');
 await db.query("insert into storage.objects(bucket_id,name,metadata) values('blog-images',$1,'{\"size\":1000}')",[image]);
+await db.query('select blog_settle_images()');assert.equal((await db.query('select blog_usage() as data')).rows[0].data.imageBytes,1000);
 await role('authenticated',B);
 assert.equal((await db.query('select * from blog_media')).rows.length,0);
 assert.equal((await db.query('select * from storage.objects')).rows.length,0);
