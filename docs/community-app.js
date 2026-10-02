@@ -35,12 +35,12 @@
       return `<ul>${fs.map(f=>{seen.add(f.id);return `<li><details ${expanded.has(f.id)?'open':''}><summary><a href="${spaceURL(p,{board,folder:f.id})}" ${f.id===activeFolder?'aria-current="location"':''}>▤ ${E(f.name)}</a></summary>${branch(f.id)}</details></li>`;}).join('')}${titles.filter(t=>t.folder_id===parent).map(t=>`<li><a href="${postURL(t.id)}" ${t.id===activePost?'aria-current="page"':''}>▧ ${E(t.title)}${t.published?'':' · 草稿'}</a></li>`).join('')}</ul>`;
     };return `<nav class="space-tree" aria-label="当前栏目文件树"><h3>${E(boards[board])}</h3>${branch()}</nav>`;
   }
-  const navSpecs=[['home','主页','⌂'],['posts','社区','▤'],['moments','说说','✎'],['tools','工具','⚒']];
+  const navSpecs=[['home','主页','⌂'],['space','空间','▱'],['posts','论坛','▤'],['moments','说说','✎'],['tools','工具','⚒']];
   function navigation(profile=null,folders=[],currentBoard=null){
     const href=k=>k==='home'?'#/':'#/'+k;
-    const entries={home:[],posts:[['技术','#/knowledge'],['作品集','#/projects'],['面试经历','#/interviews'],['随笔','#/essays'],['公共留言','#/guestbook']],tools:[],moments:[]};
+    const entries={home:[],space:[],posts:[['技术','#/knowledge'],['作品集','#/projects'],['面试经历','#/interviews'],['随笔','#/essays'],['公共留言','#/guestbook']],tools:[],moments:[]};
     nav.innerHTML=`<div class="mega-tabs">${navSpecs.map(([key,label,icon])=>`<a class="mega-tab" href="${href(key)}"><span aria-hidden="true">${icon}</span>${label}</a>`).join('')}</div><div class="mega-panel" id="mega-panel" hidden><div class="mega-grid">${navSpecs.map(([key,label])=>`<section class="mega-column" aria-label="${label}子项"><ul class="mega-tree">${entries[key].map(([name,url])=>`<li><a href="${url}">${name}</a></li>`).join('')}</ul></section>`).join('')}</div></div>`;
-    const state=route(),section=currentBoard||state.query.get('board')||state.parts[0],activeKey=['photos','tools','moments'].includes(section)?section:['','home'].includes(section)?'home':['knowledge','projects','interviews','essays','posts','guestbook','post'].includes(section)?'posts':null;nav.querySelectorAll('.mega-tab').forEach((a,i)=>{if(navSpecs[i][0]===activeKey)a.setAttribute('aria-current','page');});
+    const state=route(),section=currentBoard||state.query.get('board')||state.parts[0],activeKey=state.parts[0]==='u'||section==='space'?'space':['photos','tools','moments'].includes(section)?section:['','home'].includes(section)?'home':['knowledge','projects','interviews','essays','posts','guestbook','post'].includes(section)?'posts':null;nav.querySelectorAll('.mega-tab').forEach((a,i)=>{if(navSpecs[i][0]===activeKey)a.setAttribute('aria-current','page');});
     const panel=nav.querySelector('#mega-panel'),set=open=>{panel.hidden=!open;nav.setAttribute('aria-expanded',String(open));};
     nav.onpointerenter=e=>{if(e.pointerType==='mouse')set(true);};nav.onpointerleave=e=>{if(e.pointerType==='mouse')set(false);};
     nav.onfocusin=e=>{if(e.target.matches(':focus-visible'))set(true);};nav.onfocusout=e=>{if(!nav.contains(e.relatedTarget))set(false);};
@@ -192,6 +192,10 @@
         if(query.get('view')==='guestbook'){show('作者留言',`<h1>给 ${E(displayName(profile))} 留言</h1><section id="comments" class="comments-section"></section>`,profileCard(profile,profile.user_id===who()));navigation(profile);await comments({spaceId:profile.user_id,ownerId:profile.user_id},main.querySelector('#comments'),ticket);}
         else await authorFiles(query,profile,ticket);
       }else if(page==='write'||page==='edit')await editor(page==='edit'?id:null,query,ticket);
+      else if(page==='space'){
+        if(who()){const profile=mine||await A.ownProfile();if(ticket!==epoch)return;location.replace(spaceURL(profile));}
+        else{show('我的空间','<section class="feed-empty"><h1>我的空间</h1><button class="forum-primary" data-space-login>登录后进入空间</button></section>');main.querySelector('[data-space-login]').onclick=()=>Auth.open();Auth.open();}
+      }
       else if(page==='settings')await settings(ticket);
       else if(page==='moments')await momentPage(query,ticket);
       else if(page==='guestbook'){show('留言','<h1>留言</h1><section id="comments" class="comments-section"></section>');await comments({},main.querySelector('#comments'),ticket);}
