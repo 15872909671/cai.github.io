@@ -40,6 +40,7 @@ const settle=()=>new Promise(r=>setTimeout(r,30));
 async function go(hash){w.location.hash=hash;await settle();}
 const submit=form=>form.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));
 await settle();assert.equal(d.querySelectorAll('.community-post').length,20);assert.doesNotMatch(d.querySelector('main').textContent,/SECRET/);assert.ok(requests.some(r=>r.path.endsWith('/rpc/blog_feed')));
+await go('#/post/a-post');assert.ok(d.querySelector('.sidebar-content .toc'));
 await go('#/posts?page=2');assert.equal(d.querySelectorAll('.community-post').length,4);
 await go('#/u/bob');assert.match(d.querySelector('.space-card').textContent,/Bob/);assert.doesNotMatch(d.querySelector('.community-feed').textContent,/Alice public/);
 await go('#/u/bob?board=knowledge');assert.ok(d.querySelector('#mega-panel details .mega-tree a[href*=b-child]'));assert.ok(d.querySelector('.space-tree details details'));const directoryToggle=d.querySelector('.sidebar-toggle');directoryToggle.click();assert.equal(directoryToggle.getAttribute('aria-expanded'),'true');directoryToggle.click();assert.equal(directoryToggle.getAttribute('aria-expanded'),'false');
