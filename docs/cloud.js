@@ -62,7 +62,12 @@
     const result=await request('/rest/v1/blog_posts'+(update?'?id=eq.'+encodeURIComponent(post.id)+'&version=eq.'+version:''),{method:update?'PATCH':'POST',auth:true,body:post,headers:{Prefer:'return=representation'}});
     if(!result?.length)throw Error('此帖子已在其他窗口修改。请先下载当前内容，再重新载入帖子。');return result[0];
   }
-  const createFolder=folder=>request('/rest/v1/blog_folders',{method:'POST',auth:true,body:folder,headers:{Prefer:'return=representation'}});
+  async function createFolder(folder){
+    // The recursive visibility function uses the statement snapshot: a new
+    // folder is not visible to INSERT RETURNING until the next statement.
+    await request('/rest/v1/blog_folders',{method:'POST',auth:true,body:folder,headers:{Prefer:'return=minimal'}});
+    return request('/rest/v1/blog_folders?select=*&id=eq.'+encodeURIComponent(folder.id),{auth:true});
+  }
   function apply(data,remote,includeDrafts=false){
     data.folders=remote.folders;
     for(const key of Object.values(window.Folders.keys))data[key]=[];

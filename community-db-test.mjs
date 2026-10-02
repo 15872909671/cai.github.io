@@ -19,6 +19,12 @@ assert.equal((await db.query("select owner_id from blog_posts where id='legacy-p
 async function role(name,id=''){await db.exec('reset role');await db.query("select set_config('request.jwt.claim.sub',$1,false)",[id]);await db.exec('set role '+name);}
 async function fail(sql,values=[]){await assert.rejects(db.query(sql,values));}
 await role('authenticated',A);
+// PostgREST return=representation applies SELECT RLS during INSERT. The
+// recursive stable visibility helper cannot see that statement's new row.
+await fail("insert into blog_folders(id,collection,name) values('returning-folder','knowledge','Returning') returning *");
+await db.query("insert into blog_folders(id,collection,name) values('returning-folder','knowledge','Returning')");
+assert.equal((await db.query("select * from blog_folders where id='returning-folder'")).rows.length,1);
+await db.query("select blog_file_operation('delete_folder','returning-folder',1)");
 await db.exec("insert into blog_folders(id,collection,name) values('a-root','knowledge','Same'),('a-private','knowledge','Private');insert into blog_folders(id,collection,name,parent_id) values('a-child','knowledge','Child','a-root');insert into blog_posts(id,collection,folder_id,title,body,published) values('a-public','knowledge','a-child','Public','Search secrettext',true),('a-draft','knowledge','a-private','Private title','DRAFT BODY',false);");
 await role('authenticated',B);
 await db.exec("insert into blog_folders(id,collection,name) values('b-root','knowledge','Same');insert into blog_posts(id,collection,folder_id,title,body,published) values('b-public','knowledge','b-root','B public','B body',true),('b-draft','knowledge','b-root','B draft','B SECRET',false);");
