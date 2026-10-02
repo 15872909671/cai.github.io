@@ -1,0 +1,66 @@
+import {JSDOM} from './.test-runtime/node_modules/jsdom/lib/api.js';
+import {readFile,writeFile} from 'node:fs/promises';
+import assert from 'node:assert/strict';
+const html=await readFile('community-preview.html','utf8');
+const dom=new JSDOM(html,{url:'https://knaios.github.io/cai.github.io/#/posts',runScripts:'outside-only'}),w=dom.window,d=w.document;
+w.structuredClone=structuredClone;w.scrollTo=()=>{};w.matchMedia=()=>({matches:true});w.HTMLElement.prototype.scrollIntoView=()=>{};
+w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};w.confirm=()=>true;
+const aid='00000000-0000-0000-0000-000000000001',bid='00000000-0000-0000-0000-000000000002';
+const profiles=[{user_id:aid,username:'alice',display_name:'Alice',bio:'A bio',website:''},{user_id:bid,username:'bob',display_name:'Bob',bio:'B bio',website:''}];
+const users={alice:{id:aid,email_confirmed_at:'2026-10-02',isAuthor:false,user_metadata:{username:'alice'}},bob:{id:bid,email_confirmed_at:'2026-10-02',isAuthor:false,user_metadata:{username:'bob'}}};
+const folders=[{id:'a-folder',owner_id:aid,collection:'knowledge',parent_id:null,name:'Alice folder',version:1},{id:'b-folder',owner_id:bid,collection:'knowledge',parent_id:null,name:'Bob folder',version:1}];
+folders.push({id:'b-child',owner_id:bid,collection:'knowledge',parent_id:'b-folder',name:'Nested collection',version:1});
+const posts=[{id:'a-post',owner_id:aid,collection:'knowledge',folder_id:'a-folder',title:'Alice public',summary:'A summary',body:'## Heading\n\nAlice body',metadata:{},published:true,version:1,created_at:'2026-10-02'},{id:'a-draft',owner_id:aid,collection:'knowledge',folder_id:'a-folder',title:'SECRET draft',summary:'SECRET',body:'PRIVATE',metadata:{},published:false,version:1,created_at:'2026-10-02'},{id:'b-post',owner_id:bid,collection:'knowledge',folder_id:'b-folder',title:'Bob public',summary:'B summary',body:'Bob body',metadata:{},published:true,version:1,created_at:'2026-10-02'}];
+for(let i=0;i<22;i++)posts.push({id:'page-'+i,owner_id:bid,collection:'essays',title:'Essay '+i,body:'Essay',summary:'',metadata:{},published:true,version:1,folder_id:null,created_at:'2026-10-01'});
+const comments=[],requests=[];let current=null;
+const visible=()=>posts.filter(p=>p.published||p.owner_id===current?.id);
+const filter=(rows,params)=>rows.filter(row=>[...params].every(([key,value])=>['select','limit','offset','order'].includes(key)||value==='is.null'?value==='is.null'?row[key]==null:true:value.startsWith('eq.')?String(row[key])===value.slice(3):value.startsWith('in.(')?value.slice(4,-1).split(',').includes(row[key]):true));
+const C={currentUser:()=>current,login:async(email)=>{current=users[email.split('@')[0]];return {...current,username:profiles.find(p=>p.user_id===current.id).username};},logout:async()=>{current=null;},claimUsername:async()=>profiles.find(p=>p.user_id===current.id).username,hydrateImages:async()=>{},
+  request:async(path,options={})=>{requests.push({path,...options});const url=new URL(path,'https://test.example'),params=url.searchParams,body=options.body;
+    if(path.includes('/rpc/')){const name=url.pathname.split('/').at(-1);
+      if(name==='blog_feed'){let list=visible().filter(p=>(body.drafts?!p.published&&p.owner_id===current?.id:p.published)&&(!body.who||p.owner_id===body.who)&&(!body.board||p.collection===body.board)&&(!body.folder||p.folder_id===body.folder)&&(!body.search||(p.title+p.body).toLowerCase().includes(body.search.toLowerCase())));return {total:list.length,items:list.slice((body.page_number-1)*20,body.page_number*20).map(p=>{const {body:_,...summary}=p;const profile=profiles.find(x=>x.user_id===p.owner_id);return {...summary,username:profile.username,display_name:profile.display_name};})};}
+      if(name==='blog_usage')return {posts:2,textBytes:100,imageBytes:0,postLimit:100,textLimit:2097152,imageLimit:10485760};
+      if(name==='blog_delete_comment'){const c=comments.find(c=>c.id===body.target);c.deleted=true;c.body='此评论已删除';return null;}
+      if(name==='blog_file_operation'){const f=folders.find(f=>f.id===body.target_id);if(body.action==='rename_folder'){f.name=body.new_name;f.version++;}else if(body.action==='move_folder'){f.parent_id=body.new_parent;f.version++;}return null;}
+    }
+    const table=url.pathname.split('/').at(-1);
+    if(table==='blog_profiles'){const rows=filter(profiles,params);if(options.method==='PATCH'){Object.assign(rows[0],body);return rows;}return structuredClone(rows);}
+    if(table==='blog_posts')return structuredClone(filter(visible(),params));
+    if(table==='blog_folders')return structuredClone(filter(folders,params));
+    if(table==='blog_comments'){if(options.method==='POST'){const c={...body,id:w.crypto.randomUUID(),author_id:current.id,deleted:false,created_at:'2026-10-02'};comments.unshift(c);return [c];}return structuredClone(filter(comments,params).slice(Number(params.get('offset')||0),Number(params.get('offset')||0)+21));}
+    if(table==='blog_media')return [];
+    throw Error('Unexpected request '+path);
+  },
+  save:async(payload,version)=>{let p=posts.find(p=>p.id===payload.id);if(p){assert.equal(p.owner_id,current.id);assert.equal(p.version,version);Object.assign(p,payload,{version:version+1});}else {p={...payload,version:1,created_at:'2026-10-02'};posts.push(p);}return structuredClone(p);},
+  createFolder:async data=>{const folder={...data,version:1};folders.push(folder);return [folder];}
+};
+w.BlogCloud=C;
+for(const file of ['markdown.js','community-api.js','community-auth.js','community-app.js'])w.eval(await readFile(file,'utf8'));
+const settle=()=>new Promise(r=>setTimeout(r,30));
+async function go(hash){w.location.hash=hash;await settle();}
+const submit=form=>form.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));
+await settle();assert.equal(d.querySelectorAll('.community-post').length,20);assert.doesNotMatch(d.querySelector('main').textContent,/SECRET/);assert.ok(requests.some(r=>r.path.endsWith('/rpc/blog_feed')));
+await go('#/posts?page=2');assert.equal(d.querySelectorAll('.community-post').length,4);
+await go('#/u/bob');assert.match(d.querySelector('.space-card').textContent,/Bob/);assert.doesNotMatch(d.querySelector('.community-feed').textContent,/Alice public/);
+await go('#/u/bob?board=knowledge');assert.ok(d.querySelector('#mega-panel details .mega-tree a[href*=b-child]'));assert.ok(d.querySelector('.space-tree details details'));
+await go('#/post/b-post');assert.equal(d.querySelector('[data-edit]'),null);assert.ok(d.querySelector('[data-comment-login]'));assert.equal(d.querySelector('#comment-form'),null);
+d.querySelector('[data-comment-login]').click();let form=d.querySelector('#inline-login');form.elements.email.value='alice@example.test';form.elements.password.value='test-only';submit(form);await settle();
+assert.equal(current.id,aid);assert.ok(d.querySelector('#comment-form'));assert.equal(d.querySelector('[data-edit]'),null);
+form=d.querySelector('#comment-form');form.elements.body.value='Hello Bob';submit(form);await settle();assert.match(d.querySelector('.comment-list').textContent,/Hello Bob/);assert.equal(comments[0].author_id,aid);assert.equal(comments[0].post_id,'b-post');
+d.querySelector('[data-reply]').click();form=d.querySelector('#comment-form');assert.equal(form.querySelector('#reply-to').hidden,false);form.elements.body.value='Reply';submit(form);await settle();assert.ok(comments[0].parent_id);
+d.querySelector('[data-delete-comment]').click();await settle();assert.equal(comments[0].deleted,true);
+await go('#/u/bob?board=knowledge');d.querySelector('[data-write]').click();await settle();form=d.querySelector('#community-editor');assert.ok(form);assert.doesNotMatch(form.elements.folder.innerHTML,/Bob folder/);
+form.elements.title.value='Own new post';form.elements.body.value='Own new body';form.elements.body.dispatchEvent(new w.Event('input',{bubbles:true}));form.querySelector('[data-mode=split]').click();assert.match(d.querySelector('#editor-preview').textContent,/Own new body/);submit(form);await settle();assert.equal(posts.at(-1).owner_id,aid);assert.match(w.location.hash,/#\/post\//);assert.ok(d.querySelector('.article-body'));
+await go('#/edit/a-post');form=d.querySelector('#community-editor');form.elements.body.value='Recover this';form.elements.body.dispatchEvent(new w.Event('input',{bubbles:true}));await new Promise(r=>setTimeout(r,650));assert.match(d.querySelector('#save-state').textContent,/备份/);form.querySelector('[data-cancel]').click();await settle();assert.match(d.querySelector('.article-body').textContent,/Alice body/);
+await go('#/settings');assert.ok(d.querySelector('[data-restore="a-post"]'));form=d.querySelector('#profile-form');form.elements.display_name.value='Alice changed';submit(form);await settle();assert.equal(profiles[0].display_name,'Alice changed');
+d.querySelector('[data-restore="a-post"]').click();await settle();form=d.querySelector('#community-editor');assert.equal(form.elements.body.value,'Recover this');form.querySelector('[data-draft]').click();await settle();assert.equal(posts[0].published,false);assert.equal(d.querySelector('#comment-form'),null);
+await go('#/u/alice?board=knowledge');d.querySelector('[data-folder-create]').click();form=d.querySelector('dialog[open] form');form.elements.name.value='New collection';submit(form);await settle();assert.equal(folders.at(-1).owner_id,aid);assert.match(d.querySelector('h1').textContent,/New collection/);
+d.querySelector('[data-folder-manage]').click();form=d.querySelector('dialog[open] form');form.elements.name.value='Renamed collection';submit(form);await settle();assert.equal(folders.at(-1).name,'Renamed collection');
+await go('#/write?board=tools');form=d.querySelector('#community-editor');form.elements.title.value='Useful tool';form.elements.toolURL.value='https://example.com/tool';form.elements.body.value='Tool review';form.elements.body.dispatchEvent(new w.Event('input',{bubbles:true}));submit(form);await settle();assert.ok(d.querySelector('.hero-actions a[href="https://example.com/tool"]'));
+await go('#/write?board=photos');form=d.querySelector('#community-editor');form.elements.title.value='Photo';form.elements.body.value='![image](media:owner/image.webp)';form.elements.body.dispatchEvent(new w.Event('input',{bubbles:true}));submit(form);await settle();assert.equal(posts.at(-1).metadata.cover,'owner/image.webp');await go('#/photos');assert.ok(d.querySelector('.gallery-cover'));
+await go('#/u/bob?view=guestbook');form=d.querySelector('#comment-form');form.elements.body.value='Space message';submit(form);await settle();assert.equal(comments[0].space_id,bid);assert.equal(comments[0].post_id,null);
+await go('#/guestbook');form=d.querySelector('#comment-form');form.elements.body.value='Site message';submit(form);await settle();assert.equal(comments[0].space_id,null);
+await w.CommunityAuth.logout();await settle();assert.equal(d.querySelector('#comment-form'),null);await go('#/post/a-draft');assert.match(d.querySelector('main').textContent,/不存在|公开/);
+await go('#/knowledge');form=d.querySelector('#scoped-search');form.elements.q.value='Bob';submit(form);await settle();assert.equal(d.querySelectorAll('.community-post').length,1);assert.ok(requests.some(r=>r.body?.search==='Bob'));
+if(process.env.COMMUNITY_SNAPSHOT){await go('#/u/bob?board=knowledge');await writeFile('.test-runtime/community-snapshot.html','<!doctype html>'+d.documentElement.outerHTML.replace(/<script[\s\S]*?<\/script>/g,'').replaceAll('href="./','href="../'));}
+dom.window.close();console.log('PASS: real community UI routes, paged feeds, author spaces, login-gated comments/replies, owner-only edit, publish-to-read, restore, folders, tools, photo covers, guestbooks, logout and scoped search.');

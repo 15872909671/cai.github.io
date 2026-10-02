@@ -89,7 +89,10 @@ const imageBody={type:'image/png',size:120};queue.push({status:200,body:{Key:'ok
 queue.push({status:200,body:null});await api.logout();await assert.rejects(api.save({id:'x'}),/请先登录/);
 queue.push({status:200,body:{access_token:'test-jwt',expires_in:3600,user:{id:'other'}}},{status:200,body:[]});
 queue.push({status:200,body:[]});assert.equal((await api.login('other@example.test','test-only')).isAuthor,false);
-queue.push({status:404,body:{code:'PGRST205'}});await assert.rejects(api.request('/missing'),/尚未初始化/);
+queue.push({status:404,body:{code:'PGRST205'}});await assert.rejects(api.request('/missing'),/服务暂时不可用/);
+for(const [message,expected] of [['Please wait 5 seconds between comments',/间隔 5 秒/],['Image quota exceeded (10 MB)',/图片空间已用完/],['Post changed or permission denied',/重新加载/]]){
+  queue.push({status:400,body:{code:'P0001',message}});await assert.rejects(api.request('/failed-operation'),expected);
+}
 queue.push({status:200,body:{registered:true,nameTaken:false}});await assert.rejects(api.signup('existing@example.test','test-pass','reader'),/已注册/);
 queue.push({status:200,body:{registered:false,nameTaken:true}});await assert.rejects(api.signup('new@example.test','test-pass','reader'),/已被使用/);
 queue.push({status:200,body:{registered:false,nameTaken:false}},{status:200,body:{user:{id:'new',identities:[{}]}}});assert.equal((await api.signup('new@example.test','test-pass','reader')).needsConfirmation,true);assert.equal(JSON.parse(requests.at(-1).options.body).data.username,'reader');

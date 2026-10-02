@@ -1,3 +1,32 @@
+# CAI 多用户博客
+
+GitHub Pages 前端 + Supabase 邮箱认证、PostgreSQL 与私有图片存储。
+
+## 当前社区版本
+
+- 注册并验证邮箱后，每个用户拥有 `#/u/<公开ID>` 空间。浏览与编辑分开，发布后返回阅读页。
+- 首页展示公开帖子；作者空间只显示该作者内容。草稿仅本人可见。数据库限制帖子和文件夹归属，前端隐藏按钮不是权限边界。
+- 每篇公开帖子都有评论区；站点及作者空间各自有留言入口。必须登录并验证邮箱才能评论；支持回复、本人删除与空间作者管理。
+- 技术、作品集、面试经历、工具、相册、随笔共用帖子与嵌套文件夹。顶栏与侧栏可展开文件树。
+- 每页 20 篇，列表不加载正文，搜索在数据库执行。图片压缩成 WebP，最长边不超过 1920 像素，单张不超过 1 MB（GIF 会变为静态图）。
+- 每账号初始上限为 100 篇帖子、100 个合集、2 MB 文字与元数据、10 MB 图片；在个人资料页查看用量和清理未引用图片。
+- 设备草稿按账号隔离，每次输入后 600 ms 备份；清除浏览器数据会清除备份。云端保存用版本号防止覆盖其他窗口的新内容。
+- 注册顺序：用户名、公开 ID、邮箱、密码、确认密码、验证码；前五项校验通过才发送验证码。
+
+## 升级与发布
+
+已有项目在 Supabase SQL Editor 执行 `supabase/community.sql`。脚本在单一原作者存在时保留并归属旧数据，可重复执行；若旧数据归属不明确会回滚报错。
+
+执行后不要再运行旧的 schema.sql、images.sql 或 file-operations.sql，它们会恢复旧版权限。全新项目应先依次执行 schema.sql、file-operations.sql、registration.sql、images.sql，最后执行 community.sql。
+
+`node build.mjs --community` 会先检查线上迁移及列表接口，成功后更新根目录及 docs 的发布入口。GitHub Pages 使用 main / docs；两份发布文件保持一致。旧的 app.js 和 inline-writer.js 留作历史源码，社区入口不加载它们。
+
+验证命令：`node community-db-test.mjs`、`node community-ui-test.mjs`、`node community-auth-test.mjs`、`node cloud-test.mjs`。测试依赖位于本地 .test-runtime/node_modules（jsdom、@electric-sql/pglite），不上传发布目录。
+
+本地数据库测试与模拟网络界面测试不能替代真实邮件投递、真实账号上传及移动端视觉验收。正式验收还需在线上用两个已验证账号检查发帖、评论、图片上传与互相隔离。
+
+## 旧版本记录（迁移后不再适用）
+
 # CAI
 
 采用风景首屏、图文帖子卡片与个人侧栏的博客，包含技术博客、作品集合、面试经历和随笔，支持浅色与深色模式。使用原生 HTML/CSS/JavaScript，不依赖 npm 包或第三方字体。
