@@ -5,7 +5,7 @@
   const boards={knowledge:'技术博客',projects:'作品集',interviews:'面试经历',tools:'工具',photos:'相册',essays:'随笔'};
   const siteOwner='430ef651-e7f9-4979-96e1-67e6bca2814d';
   let mine=null,epoch=0,editing=null,dirty=false,working=false,backupTimer=null,lastHash=location.hash,searchEpoch=0;
-  const isGlobalRoute=hash=>/^#\/(?:$|(?:home|space|posts|knowledge|projects|interviews|essays|tools|photos|guestbook|career)(?:[?]|$))/.test(hash);
+  const isGlobalRoute=hash=>/^#\/(?:$|(?:home|posts|knowledge|projects|interviews|essays|tools|photos|guestbook|career)(?:[?]|$))/.test(hash);
   let returnToGlobal='#/';
   try{const saved=sessionStorage.getItem('cai:return-to-global');if(saved&&isGlobalRoute(saved))returnToGlobal=saved;}catch{}
   function rememberGlobal(hash){if(!isGlobalRoute(hash))return;returnToGlobal=hash;try{sessionStorage.setItem('cai:return-to-global',hash);}catch{}}
@@ -50,7 +50,7 @@
       const view=route().query.get('view'),active=view==='guestbook'?'guestbook':view==='moments'||currentBoard==='moments'?'moments':'blog';
       nav.innerHTML=`<div class="mega-tabs"><div class="space-heading"><button class="space-back" type="button" aria-label="返回全站栏目" title="返回全站栏目">←</button><a class="space-identity" href="${spaceURL(profile)}">${avatar(profile)}<span>${E(displayName(profile))}的空间</span></a></div>${[['blog','博客',{}],['moments','动态',{view:'moments'}],['guestbook','留言',{view:'guestbook'}]].map(([key,label,params])=>`<a class="mega-tab" href="${spaceURL(profile,params)}" ${key===active?'aria-current="page"':''}>${label}</a>`).join('')}</div><div id="mega-panel" hidden></div>`;
     }
-    nav.querySelector('.space-back')?.addEventListener('click',()=>{location.hash=/^#\/space(?:[?]|$)/.test(returnToGlobal)?'#/space?view=overview':returnToGlobal;});
+    nav.querySelector('.space-back')?.addEventListener('click',()=>{location.hash=returnToGlobal;});
     const state=route(),section=currentBoard||state.query.get('board')||state.parts[0],activeKey=state.parts[0]==='u'||section==='space'?'space':['photos','tools','moments'].includes(section)?section:['','home'].includes(section)?'home':['knowledge','projects','interviews','essays','posts','guestbook','post'].includes(section)?'posts':null;nav.querySelectorAll('.mega-tab').forEach((a,i)=>{if(!profile&&navSpecs[i][0]===activeKey)a.setAttribute('aria-current','page');});
     const panel=nav.querySelector('#mega-panel'),set=open=>{panel.hidden=!!profile||!open;nav.setAttribute('aria-expanded',String(open));};
     nav.onpointerenter=e=>{if(e.pointerType==='mouse')set(true);};nav.onpointerleave=e=>{if(e.pointerType==='mouse')set(false);};
@@ -205,7 +205,7 @@
         else await authorFiles(query,profile,ticket);
       }else if(page==='write'||page==='edit')await editor(page==='edit'?id:null,query,ticket);
       else if(page==='space'||page==='moments'){
-        if(who()){const profile=mine||await A.ownProfile();if(ticket!==epoch)return;if(page==='space'&&query.get('view')==='overview'){await authorFiles(new URLSearchParams(),profile,ticket);if(ticket===epoch)navigation();}else location.replace(spaceURL(profile,page==='moments'?{view:'moments'}:{}));}
+        if(who()){const profile=mine||await A.ownProfile();if(ticket!==epoch)return;location.replace(spaceURL(profile,page==='moments'?{view:'moments'}:{}));}
         else{show('我的空间','<section class="feed-empty"><h1>我的空间</h1><button class="forum-primary" data-space-login>登录后进入空间</button></section>');main.querySelector('[data-space-login]').onclick=()=>Auth.open();Auth.open();}
       }
       else if(page==='settings')await settings(ticket);
