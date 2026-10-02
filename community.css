@@ -223,3 +223,8 @@ body.is-home .footer{display:none}
 .space-back:hover{background:var(--ref-bg);color:var(--ref-blue)}
 .space-back:focus-visible{outline:2px solid var(--ref-blue);outline-offset:2px}
 @media(max-width:760px){.header #nav .space-heading{grid-column:1/-1}}
+
+/* Hover and selection paint the same underline, never a second box shadow. */
+.header #nav .mega-tab,.header #nav .mega-tab:hover,.header #nav .mega-tab:focus,.header #nav .mega-tab.active{position:relative;box-shadow:none!important;text-decoration:none}
+.header #nav .mega-tab::after{content:'';position:absolute;bottom:3px;left:12px;right:12px;height:2px;background:currentColor;border-radius:2px;opacity:0;pointer-events:none}
+.header #nav .mega-tab:hover::after,.header #nav .mega-tab:focus-visible::after,.header #nav .mega-tab[aria-current=page]::after{opacity:1}
