@@ -74,5 +74,6 @@ await go('#/edit/a-post');form=d.querySelector('#community-editor');form.element
 await w.CommunityAuth.logout();await settle();assert.equal(d.querySelector('#comment-form'),null);await go('#/post/a-draft');assert.match(d.querySelector('main').textContent,/不存在|公开/);
 await go('#/knowledge');form=d.querySelector('#scoped-search');form.elements.q.value='Bob';submit(form);await settle();assert.equal(d.querySelectorAll('.community-post').length,1);assert.ok(requests.some(r=>r.body?.search==='Bob'));
 await go('#/knowledge?q=not-a-real-match');assert.ok(d.querySelector('.feed-empty a'));assert.match(d.querySelector('.feed-empty h2').textContent,/没有找到/);
+await go('#/');assert.ok(d.querySelector('.home-art'));assert.equal(d.querySelector('main').textContent,'');await go('#/posts');assert.ok(d.querySelector('.community-feed'));assert.equal(d.body.classList.contains('is-home'),false);
 if(process.env.COMMUNITY_SNAPSHOT){await go('#/u/bob?board=knowledge');await snapshot('listing');d.documentElement.dataset.theme='dark';await snapshot('dark');delete d.documentElement.dataset.theme;await go('#/');await snapshot('home');}
 dom.window.close();console.log('PASS: real community UI routes, paged feeds, author spaces, login-gated comments/replies, owner-only edit, publish-to-read, restore, folders, tools, photo covers, guestbooks, logout and scoped search.');

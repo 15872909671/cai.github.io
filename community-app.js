@@ -203,10 +203,11 @@
         const rows=await C.request('/rest/v1/blog_folders?select=*&id=eq.'+enc(id)+'&limit=1',{auth:!!who()});if(!rows[0])throw Error('合集不存在或不可访问。');const profile=await A.profile(rows[0].owner_id,'user_id');if(ticket!==epoch)return;location.replace(spaceURL(profile,{board:rows[0].collection,folder:id}));
       }else if(page==='albums'){location.replace('#/photos');}else if(page==='resume'){const profile=await A.profile(siteOwner,'user_id');if(!profile)throw Error('作者资料尚未配置。');if(ticket!==epoch)return;show('关于作者',`<h1>${E(displayName(profile))}</h1><p>${E(profile.bio)}</p><a href="${spaceURL(profile,{board:'projects'})}">作品集</a>`,profileCard(profile));}
       else if(page==='career'){show('职业合集','<h1>职业合集</h1><div class="folder-chips"><a href="#/projects">作品集</a><a href="#/interviews">面试经历</a></div>');}
-      else if(!page||page==='home'||page==='posts'||boards[page]){
-        await listing(query,null,boards[page]?page:null,ticket);
-        if((!page||page==='home')&&ticket===epoch){document.body.classList.add('is-home');const hero=document.createElement('div');hero.className='community-hero';hero.setAttribute('aria-hidden','true');main.prepend(hero);}
-      }else throw Error('页面不存在。');
+      else if(!page||page==='home'){
+        main.classList.remove('is-writing','is-reading');document.body.classList.add('is-home');document.title='主页 · CAI';
+        main.innerHTML='<div class="home-art" role="img" aria-label="山峦风景画"></div>';
+      }else if(page==='posts'||boards[page])await listing(query,null,boards[page]?page:null,ticket);
+      else throw Error('页面不存在。');
     }catch(e){if(ticket===epoch)errorPage(e);}finally{if(ticket===epoch)main.removeAttribute('aria-busy');}
   }
   window.CommunityApp={user:null,render,

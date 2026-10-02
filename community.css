@@ -197,3 +197,9 @@ input:focus,textarea:focus,select:focus{outline:2px solid var(--focus);border-co
 @media(max-width:760px){.header #nav .mega-column{padding:0 5px 0 10px}.header #nav .mega-tab{padding:10px 5px;gap:3px}.header #nav .mega-panel{margin-top:0;padding-top:0}}
 
 @media(min-width:761px){.header .header-inner{max-width:none;padding:0 28px;justify-content:flex-start}.header .brand{margin:0;flex:0 0 auto}.header #nav{flex:0 1 550px;width:550px;margin-left:clamp(36px,5vw,80px);margin-right:16px}.header .header-search{margin-left:auto}.header .mega-tabs{height:60px}}
+
+/* Home is an uninterrupted canvas; all reading lives in the forum and spaces. */
+body.is-home{overflow-x:hidden}
+body.is-home #main{padding:0;margin:0;min-height:100vh;min-height:100dvh}
+body.is-home .home-art{position:fixed;inset:0;background:#1d3049 url('./landscape.svg') center/cover no-repeat;z-index:0}
+body.is-home .footer{display:none}

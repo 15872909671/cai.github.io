@@ -11,7 +11,7 @@ async function ready(){const deadline=Date.now()+30000;while(d.querySelector('#m
 async function go(hash){w.location.hash=hash;await new Promise(r=>setTimeout(r,10));await ready();}
 try{
  for(const script of d.querySelectorAll('script[src]')){const url=new URL(script.getAttribute('src'),base);const response=await fetch(url);assert.equal(response.status,200,url.href);w.eval(await response.text());}
- await ready();assert.ok(d.querySelector('.community-feed'));const cards=d.querySelectorAll('.community-post');assert.ok(cards.length<=20);
+ await ready();assert.ok(d.querySelector('.home-art'));assert.equal(d.querySelector('.community-feed'),null);await go('#/posts');assert.ok(d.querySelector('.community-feed'));const cards=d.querySelectorAll('.community-post');assert.ok(cards.length<=20);
  const baseline=await w.CommunityAPI.feed({page_number:1});assert.equal(cards.length,baseline.items.length);
  let author;
  if(cards.length){const post=cards[0].querySelector('a[href^="#/post/"]').getAttribute('href');author=cards[0].querySelector('.user-link').getAttribute('href');await go(post);assert.ok(d.querySelector('.article-body'));assert.ok(d.querySelector('[data-comment-login]'));assert.equal(d.querySelector('[data-edit]'),null);}
