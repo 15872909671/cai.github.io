@@ -5,6 +5,7 @@
   const boards={knowledge:'技术博客',projects:'作品集',interviews:'面试经历',tools:'工具',photos:'相册',essays:'随笔'};
   const siteOwner='430ef651-e7f9-4979-96e1-67e6bca2814d';
   let mine=null,epoch=0,editing=null,dirty=false,working=false,backupTimer=null,lastHash=location.hash,searchEpoch=0;
+  const navTrail=[location.hash||'#/'];
   const modal=document.createElement('dialog');modal.className='inline-dialog';document.body.append(modal);
   const enc=encodeURIComponent,who=()=>C.currentUser()?.id;
   const safe=u=>/^https?:\/\//i.test(u||'')?E(u):'';
@@ -35,7 +36,7 @@
       return `<ul>${fs.map(f=>{seen.add(f.id);return `<li><details ${expanded.has(f.id)?'open':''}><summary><a href="${spaceURL(p,{board,folder:f.id})}" ${f.id===activeFolder?'aria-current="location"':''}>▤ ${E(f.name)}</a></summary>${branch(f.id)}</details></li>`;}).join('')}${titles.filter(t=>t.folder_id===parent).map(t=>`<li><a href="${postURL(t.id)}" ${t.id===activePost?'aria-current="page"':''}>▧ ${E(t.title)}${t.published?'':' · 草稿'}</a></li>`).join('')}</ul>`;
     };return `<nav class="space-tree" aria-label="当前栏目文件树"><h3>${E(boards[board])}</h3>${branch()}</nav>`;
   }
-  const navSpecs=[['home','主页','⌂'],['space','空间','▱'],['posts','论坛','▤'],['moments','说说','✎'],['tools','工具','⚒']];
+  const navSpecs=[['home','主页','⌂'],['space','空间','▱'],['posts','论坛','▤'],['tools','工具','⚒']];
   function navigation(profile=null,folders=[],currentBoard=null){
     const href=k=>k==='home'?'#/':'#/'+k;
     const entries={home:[],space:[],posts:[['技术','#/knowledge'],['作品集','#/projects'],['面试经历','#/interviews'],['随笔','#/essays'],['公共留言','#/guestbook']],tools:[],moments:[]};
@@ -43,8 +44,9 @@
     nav.classList.toggle('author-nav',!!profile);
     if(profile){
       const view=route().query.get('view'),active=view==='guestbook'?'guestbook':view==='moments'||currentBoard==='moments'?'moments':'blog';
-      nav.innerHTML=`<div class="mega-tabs"><a class="space-identity" href="${spaceURL(profile)}">${avatar(profile)}<span>${E(displayName(profile))}的空间</span></a>${[['blog','博客',{}],['moments','说说',{view:'moments'}],['guestbook','留言',{view:'guestbook'}]].map(([key,label,params])=>`<a class="mega-tab" href="${spaceURL(profile,params)}" ${key===active?'aria-current="page"':''}>${label}</a>`).join('')}</div><div id="mega-panel" hidden></div>`;
+      nav.innerHTML=`<div class="mega-tabs"><div class="space-heading"><button class="space-back" type="button" aria-label="返回上一页" title="返回上一页">←</button><a class="space-identity" href="${spaceURL(profile)}">${avatar(profile)}<span>${E(displayName(profile))}的空间</span></a></div>${[['blog','博客',{}],['moments','动态',{view:'moments'}],['guestbook','留言',{view:'guestbook'}]].map(([key,label,params])=>`<a class="mega-tab" href="${spaceURL(profile,params)}" ${key===active?'aria-current="page"':''}>${label}</a>`).join('')}</div><div id="mega-panel" hidden></div>`;
     }
+    nav.querySelector('.space-back')?.addEventListener('click',()=>{location.hash=navTrail.length>1?navTrail[navTrail.length-2]:'#/posts';});
     const state=route(),section=currentBoard||state.query.get('board')||state.parts[0],activeKey=state.parts[0]==='u'||section==='space'?'space':['photos','tools','moments'].includes(section)?section:['','home'].includes(section)?'home':['knowledge','projects','interviews','essays','posts','guestbook','post'].includes(section)?'posts':null;nav.querySelectorAll('.mega-tab').forEach((a,i)=>{if(!profile&&navSpecs[i][0]===activeKey)a.setAttribute('aria-current','page');});
     const panel=nav.querySelector('#mega-panel'),set=open=>{panel.hidden=!!profile||!open;nav.setAttribute('aria-expanded',String(open));};
     nav.onpointerenter=e=>{if(e.pointerType==='mouse')set(true);};nav.onpointerleave=e=>{if(e.pointerType==='mouse')set(false);};
@@ -102,9 +104,9 @@
   }
   async function momentPage(query,ticket,profile=null){
     const page=Math.max(1,Number(query.get('page'))||1),data=await A.moments(page,profile?.user_id);if(ticket!==epoch)return;
-    show('说说',`<section class="moments-page"><header class="board-head"><h1>说说</h1></header>${who()&&(!profile||profile.user_id===who())?'<form id="moment-form" class="moment-compose"><label class="sr-only" for="moment-body">说说内容</label><textarea id="moment-body" name="body" maxlength="1000" required placeholder="分享此刻的想法…"></textarea><div class="community-actions"><span id="moment-count">0 / 1000</span><button class="forum-primary">发布说说</button></div></form>':(!profile?'<div class="moment-compose"><button data-moment-login>登录后写说说</button></div>':'')}<div class="moments-feed">${data.items.map(p=>`<article class="moment-card"><div class="post-byline">${userLink(p.author)}<span>${date(p.created_at)}</span></div><p class="moment-body">${E(p.body)}</p><a class="moment-comments" href="${postURL(p.id)}">查看 / 评论</a></article>`).join('')||'<div class="feed-empty"><h2>还没有说说</h2></div>'}</div><nav class="forum-pagination" aria-label="分页">${page>1?`<a href="${profile?spaceURL(profile,{view:'moments',page:page-1}):'#/moments?page='+(page-1)}">上一页</a>`:''}${data.more?`<a href="${profile?spaceURL(profile,{view:'moments',page:page+1}):'#/moments?page='+(page+1)}">下一页</a>`:''}</nav></section>`);navigation(profile);
+    show('动态',`<section class="moments-page"><header class="board-head"><h1>动态</h1></header>${who()&&(!profile||profile.user_id===who())?'<form id="moment-form" class="moment-compose"><label class="sr-only" for="moment-body">动态内容</label><textarea id="moment-body" name="body" maxlength="1000" required placeholder="分享此刻的想法…"></textarea><div class="community-actions"><span id="moment-count">0 / 1000</span><button class="forum-primary">发布动态</button></div></form>':(!profile?'<div class="moment-compose"><button data-moment-login>登录后写动态</button></div>':'')}<div class="moments-feed">${data.items.map(p=>`<article class="moment-card"><div class="post-byline">${userLink(p.author)}<span>${date(p.created_at)}</span></div><p class="moment-body">${E(p.body)}</p><a class="moment-comments" href="${postURL(p.id)}">查看 / 评论</a></article>`).join('')||'<div class="feed-empty"><h2>还没有动态</h2></div>'}</div><nav class="forum-pagination" aria-label="分页">${page>1?`<a href="${profile?spaceURL(profile,{view:'moments',page:page-1}):'#/moments?page='+(page-1)}">上一页</a>`:''}${data.more?`<a href="${profile?spaceURL(profile,{view:'moments',page:page+1}):'#/moments?page='+(page+1)}">下一页</a>`:''}</nav></section>`);navigation(profile);
     main.querySelector('[data-moment-login]')?.addEventListener('click',()=>Auth.open());
-    const form=main.querySelector('#moment-form');if(form){form.elements.body.oninput=()=>{main.querySelector('#moment-count').textContent=form.elements.body.value.length+' / 1000';};form.onsubmit=e=>{e.preventDefault();const body=form.elements.body.value.trim();if(!body||body.length>1000)return;job(async()=>{const folders=await A.folders(who(),'essays');const folder=folders.find(f=>f.id==='default:'+who()+':essays');await C.save({id:crypto.randomUUID(),owner_id:who(),collection:'essays',folder_id:folder?.id||null,title:body.split('\n')[0].slice(0,60),summary:body.slice(0,160),body,metadata:{kind:'moment'},published:true});if(page!==1)location.hash=profile?spaceURL(profile,{view:'moments'}):'#/moments';else await render();toast('说说已发布。');},form);};}
+    const form=main.querySelector('#moment-form');if(form){form.elements.body.oninput=()=>{main.querySelector('#moment-count').textContent=form.elements.body.value.length+' / 1000';};form.onsubmit=e=>{e.preventDefault();const body=form.elements.body.value.trim();if(!body||body.length>1000)return;job(async()=>{const folders=await A.folders(who(),'essays');const folder=folders.find(f=>f.id==='default:'+who()+':essays');await C.save({id:crypto.randomUUID(),owner_id:who(),collection:'essays',folder_id:folder?.id||null,title:body.split('\n')[0].slice(0,60),summary:body.slice(0,160),body,metadata:{kind:'moment'},published:true});if(page!==1)location.hash=profile?spaceURL(profile,{view:'moments'}):'#/moments';else await render();toast('动态已发布。');},form);};}
   }
   async function article(id,ticket){
     const p=await A.post(id);if(ticket!==epoch)return;if(!p)throw Error('帖子不存在，或尚未公开。');
@@ -198,12 +200,11 @@
         else if(query.get('view')==='moments')await momentPage(query,ticket,profile);
         else await authorFiles(query,profile,ticket);
       }else if(page==='write'||page==='edit')await editor(page==='edit'?id:null,query,ticket);
-      else if(page==='space'){
-        if(who()){const profile=mine||await A.ownProfile();if(ticket!==epoch)return;location.replace(spaceURL(profile));}
+      else if(page==='space'||page==='moments'){
+        if(who()){const profile=mine||await A.ownProfile();if(ticket!==epoch)return;location.replace(spaceURL(profile,page==='moments'?{view:'moments'}:{}));}
         else{show('我的空间','<section class="feed-empty"><h1>我的空间</h1><button class="forum-primary" data-space-login>登录后进入空间</button></section>');main.querySelector('[data-space-login]').onclick=()=>Auth.open();Auth.open();}
       }
       else if(page==='settings')await settings(ticket);
-      else if(page==='moments')await momentPage(query,ticket);
       else if(page==='guestbook'){show('留言','<h1>留言</h1><section id="comments" class="comments-section"></section>');await comments({},main.querySelector('#comments'),ticket);}
       else if(page==='folder'){
         const rows=await C.request('/rest/v1/blog_folders?select=*&id=eq.'+enc(id)+'&limit=1',{auth:!!who()});if(!rows[0])throw Error('合集不存在或不可访问。');const profile=await A.profile(rows[0].owner_id,'user_id');if(ticket!==epoch)return;location.replace(spaceURL(profile,{board:rows[0].collection,folder:id}));
@@ -229,7 +230,7 @@
   search.oninput=()=>{clearTimeout(searchTimer);const value=search.value.trim(),ticket=++searchEpoch;if(!value){hideSearch();return;}searchTimer=setTimeout(async()=>{try{const data=await A.feed({search:value});if(ticket!==searchEpoch)return;results.innerHTML=data.items.slice(0,8).map(p=>`<a class="search-result" href="${postURL(p.id)}"><strong>${E(p.title)}</strong><p>${E(displayName(p))} · ${E(boards[p.collection])}</p></a>`).join('')||'<p class="search-hint">没有匹配的帖子</p>';results.hidden=false;search.setAttribute('aria-expanded','true');}catch(e){if(ticket===searchEpoch){results.innerHTML='<p class="search-hint">搜索暂时不可用，请重试。</p>';results.hidden=false;}}},250);};
   document.getElementById('header-search').onsubmit=e=>{e.preventDefault();hideSearch();location.hash='#/posts?q='+enc(search.value.trim());};results.onclick=e=>{if(e.target.closest('a'))hideSearch();};
   document.addEventListener('click',e=>{if(!e.target.closest('#header-search'))hideSearch();});document.addEventListener('keydown',e=>{if(e.key==='Escape')hideSearch();if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();search.focus();}});
-  addEventListener('hashchange',()=>{if(working||(dirty&&!confirm('离开编辑？尚未发布的内容会保留在设备草稿中。'))){history.replaceState(null,'',lastHash||'#/');return;}backup();editing=null;dirty=false;lastHash=location.hash;render();scrollTo(0,0);});
+  addEventListener('hashchange',()=>{if(working||(dirty&&!confirm('离开编辑？尚未发布的内容会保留在设备草稿中。'))){history.replaceState(null,'',lastHash||'#/');return;}backup();editing=null;dirty=false;const next=location.hash||'#/';if(navTrail.length>1&&navTrail[navTrail.length-2]===next)navTrail.pop();else if(/^#\/(space|moments)(?:[?]|$)/.test(navTrail.at(-1))&&next.startsWith('#/u/'))navTrail[navTrail.length-1]=next;else if(navTrail.at(-1)!==next)navTrail.push(next);lastHash=location.hash;render();scrollTo(0,0);});
   addEventListener('beforeunload',e=>{backup();if(dirty||working){e.preventDefault();e.returnValue='';}});document.addEventListener('visibilitychange',()=>{if(document.hidden)backup();});
   render();
 })();
