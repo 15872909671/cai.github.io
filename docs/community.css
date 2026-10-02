@@ -6,3 +6,7 @@
 .community-actions .forum-primary{background:var(--ref-blue);border-color:var(--ref-blue);color:#fff}
 [data-theme=dark] .community-container{--line:#4b5361}
 @media(max-width:800px){.community-layout>.community-sidebar{grid-column:1;grid-row:1}.community-layout>.file-pane{grid-column:1;grid-row:2}}
+
+.community-sidebar{min-width:0;overflow-x:hidden}.space-card h2{overflow-wrap:anywhere}.user-link>span{min-width:0;overflow-wrap:anywhere}
+.sidebar-toggle{display:none}
+@media(max-width:800px){.sidebar-toggle{display:block;width:100%;text-align:left;padding:12px 16px;border:1px solid var(--line,#e1e7ee);border-radius:6px;background:var(--ref-card);color:var(--ref-ink);font:inherit;cursor:pointer}.sidebar-toggle:after{content:'＋';float:right}.sidebar-toggle[aria-expanded=true]:after{content:'−'}.community-sidebar .sidebar-content{display:none}.community-sidebar.expanded .sidebar-content{display:block;margin-top:12px}.community-layout{gap:18px}}

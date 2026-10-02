@@ -42,7 +42,7 @@ const submit=form=>form.dispatchEvent(new w.Event('submit',{bubbles:true,cancela
 await settle();assert.equal(d.querySelectorAll('.community-post').length,20);assert.doesNotMatch(d.querySelector('main').textContent,/SECRET/);assert.ok(requests.some(r=>r.path.endsWith('/rpc/blog_feed')));
 await go('#/posts?page=2');assert.equal(d.querySelectorAll('.community-post').length,4);
 await go('#/u/bob');assert.match(d.querySelector('.space-card').textContent,/Bob/);assert.doesNotMatch(d.querySelector('.community-feed').textContent,/Alice public/);
-await go('#/u/bob?board=knowledge');assert.ok(d.querySelector('#mega-panel details .mega-tree a[href*=b-child]'));assert.ok(d.querySelector('.space-tree details details'));
+await go('#/u/bob?board=knowledge');assert.ok(d.querySelector('#mega-panel details .mega-tree a[href*=b-child]'));assert.ok(d.querySelector('.space-tree details details'));const directoryToggle=d.querySelector('.sidebar-toggle');directoryToggle.click();assert.equal(directoryToggle.getAttribute('aria-expanded'),'true');directoryToggle.click();assert.equal(directoryToggle.getAttribute('aria-expanded'),'false');
 await go('#/post/b-post');assert.equal(d.querySelector('[data-edit]'),null);assert.ok(d.querySelector('[data-comment-login]'));assert.equal(d.querySelector('#comment-form'),null);
 d.querySelector('[data-comment-login]').click();let form=d.querySelector('#inline-login');form.elements.email.value='alice@example.test';form.elements.password.value='test-only';submit(form);await settle();
 assert.equal(current.id,aid);assert.ok(d.querySelector('#comment-form'));assert.equal(d.querySelector('[data-edit]'),null);
