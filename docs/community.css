@@ -203,3 +203,16 @@ body.is-home{overflow-x:hidden}
 body.is-home #main{padding:0;margin:0;min-height:100vh;min-height:100dvh}
 body.is-home .home-art{position:fixed;inset:0;background:#1d3049 url('./landscape.svg') center/cover no-repeat;z-index:0}
 body.is-home .footer{display:none}
+
+.header #nav.author-nav{flex-basis:580px;width:580px}
+.header #nav.author-nav .mega-tabs{grid-template-columns:minmax(130px,2fr) repeat(3,minmax(50px,1fr))}
+.header #nav .space-identity{display:flex;align-items:center;gap:10px;min-width:0;padding:8px 10px;background:none;border:0}
+.space-identity>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.header #nav.author-nav .mega-tab{justify-content:center}
+.header .account-button .user-avatar{width:30px;height:30px}
+.site-switcher{position:relative;flex-shrink:0}
+.site-switcher-menu{display:none;position:absolute;top:100%;left:0;min-width:132px;padding:10px 0;background:var(--ref-card);border:1px solid var(--line);border-radius:8px;box-shadow:0 12px 30px #10223b20}
+.site-switcher:hover:not(.dismissed) .site-switcher-menu,.site-switcher:focus-within:not(.dismissed) .site-switcher-menu{display:grid}
+.header .site-switcher-menu a{padding:9px 18px;color:var(--ref-ink)!important;font-size:14px;white-space:nowrap}
+.header .site-switcher-menu a:hover{background:var(--ref-bg);color:var(--ref-blue)!important}
+@media(max-width:760px){.header #nav.author-nav{width:100%}.header #nav.author-nav .mega-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}.header #nav .space-identity{grid-column:1/-1}.header .site-switcher{margin-right:auto}}

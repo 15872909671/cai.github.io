@@ -45,8 +45,8 @@
   const feed=params=>rpc('blog_feed',{who:null,board:null,folder:null,search:'',drafts:false,page_number:1,...params});
   const folders=(owner,board)=>C.request('/rest/v1/blog_folders?select=*&owner_id=eq.'+encode(owner)+(board?'&collection=eq.'+encode(board):'')+'&order=name.asc&limit=100',{auth:!!C.currentUser()});
   const titles=(owner,board)=>C.request('/rest/v1/blog_posts?select=id,title,folder_id,published,collection&owner_id=eq.'+encode(owner)+(board?'&collection=eq.'+encode(board):'')+(C.currentUser()?.id===owner?'':'&published=eq.true')+'&order=title.asc&limit=100',{auth:!!C.currentUser()});
-  async function moments(page=1){
-    const rows=await C.request('/rest/v1/blog_posts?select=id,title,body,owner_id,created_at,metadata,published&published=eq.true&metadata->>kind=eq.moment&order=created_at.desc,id.desc&limit=21&offset='+((page-1)*20));
+  async function moments(page=1,owner=null){
+    const rows=await C.request('/rest/v1/blog_posts?select=id,title,body,owner_id,created_at,metadata,published&published=eq.true&metadata->>kind=eq.moment&order=created_at.desc,id.desc&limit=21&offset='+((page-1)*20)+(owner?'&owner_id=eq.'+encode(owner):''));
     const ids=[...new Set(rows.slice(0,20).map(p=>p.owner_id))];
     const profiles=ids.length?await C.request('/rest/v1/blog_profiles?select=user_id,username,display_name&user_id=in.('+ids.map(encode).join(',')+')'):[];
     return {more:rows.length>20,items:rows.slice(0,20).map(p=>({...p,author:profiles.find(a=>a.user_id===p.owner_id)}))};
