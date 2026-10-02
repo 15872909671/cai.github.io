@@ -24,5 +24,22 @@
     }
     flush();if(code!==null)result+='<pre><code>'+escape(code.join('\n'))+'</code></pre>';return result;
   }
-  window.BlogMarkdown={render,escape};
+  if(window.marked&&window.DOMPurify){
+    const renderer=new window.marked.Renderer();
+    renderer.html=({text})=>escape(text);
+    renderer.heading=function({tokens,depth}){const level=Math.min(6,depth+1);return `<h${level}>${this.parser.parseInline(tokens)}</h${level}>\n`;};
+    renderer.image=({href,text})=>/^media:[\w-]+\/[\w.-]+$/.test(href)?`<img data-media="${escape(href.slice(6))}" alt="${escape(text)}" loading="lazy">`:/^https?:\/\//i.test(href)?`<img src="${escape(href)}" alt="${escape(text)}" loading="lazy" referrerpolicy="no-referrer">`:escape(text);
+    renderer.link=function({href,tokens}){const label=this.parser.parseInline(tokens);return /^(https?:\/\/|mailto:|#)/i.test(href)?`<a href="${escape(href)}"${href.startsWith('#')?'':' target="_blank" rel="noopener noreferrer"'}>${label}</a>`:label;};
+    const parser=new window.marked.Marked({renderer,gfm:true,breaks:true});
+    const fullRender=source=>window.DOMPurify.sanitize(parser.parse(String(source||'').replace(/^\uFEFF/,'').replace(/\u0000/g,'')),{USE_PROFILES:{html:true},ADD_ATTR:['target','data-media'],ALLOW_DATA_ATTR:false,FORBID_TAGS:['style','form','iframe','object','embed']});
+    window.BlogMarkdown={render:fullRender,escape};
+  }else window.BlogMarkdown={render,escape};
+  window.BlogMarkdown.readFile=async file=>{
+    if(!file||! /\.(md|markdown)$/i.test(file.name))throw Error('请选择 .md 或 .markdown 文件。');
+    if(file.size>2*1024*1024)throw Error('Markdown 文件不能超过 2 MB。');
+    const text=(await file.text()).replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n');
+    const heading=text.match(/^#\s+([^\n]+)\n*/);const body=heading?text.slice(heading[0].length):text;
+    if(body.length>200000)throw Error('正文不能超过 200000 个字符。');
+    return {title:(heading?heading[1]:file.name.replace(/\.(md|markdown)$/i,'')).trim().slice(0,200),body};
+  };
 })();

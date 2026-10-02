@@ -19,6 +19,13 @@ assert.equal((await db.query("select owner_id from blog_posts where id='legacy-p
 async function role(name,id=''){await db.exec('reset role');await db.query("select set_config('request.jwt.claim.sub',$1,false)",[id]);await db.exec('set role '+name);}
 async function fail(sql,values=[]){await assert.rejects(db.query(sql,values));}
 await role('authenticated',A);
+const defaults=[['knowledge','技术'],['projects','作品集'],['interviews','面试经历'],['essays','随笔']];
+const initialRows=defaults.map(([collection,name])=>`('default:${A}:${collection}','${collection}','${name}')`).join(',');
+await db.exec(`insert into blog_folders(id,collection,name) values ${initialRows}`);
+await fail(`insert into blog_folders(id,collection,name) values ${initialRows}`);
+assert.equal((await db.query("select id from blog_folders where id like 'default:%'")).rows.length,4);
+for(const [collection] of defaults)await db.query("select blog_file_operation('delete_folder',$1,1)",['default:'+A+':'+collection]);
+
 // PostgREST return=representation applies SELECT RLS during INSERT. The
 // recursive stable visibility helper cannot see that statement's new row.
 await fail("insert into blog_folders(id,collection,name) values('returning-folder','knowledge','Returning') returning *");
