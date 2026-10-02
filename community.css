@@ -228,3 +228,13 @@ body.is-home .footer{display:none}
 .header #nav .mega-tab,.header #nav .mega-tab:hover,.header #nav .mega-tab:focus,.header #nav .mega-tab.active{position:relative;box-shadow:none!important;text-decoration:none}
 .header #nav .mega-tab::after{content:'';position:absolute;bottom:3px;left:12px;right:12px;height:2px;background:currentColor;border-radius:2px;opacity:0;pointer-events:none}
 .header #nav .mega-tab:hover::after,.header #nav .mega-tab:focus-visible::after,.header #nav .mega-tab[aria-current=page]::after{opacity:1}
+
+.account-dropdown{position:relative;flex:0 0 auto;align-self:stretch;display:flex;align-items:center}
+.header .account-dropdown .account-button{padding:6px;border:0;background:transparent;display:flex;align-items:center;justify-content:center}
+.account-popover{position:absolute;top:100%;right:0;width:160px;padding:8px;background:var(--ref-card);color:var(--ref-ink);border:1px solid var(--line);border-radius:0 0 10px 10px;box-shadow:0 12px 28px #10223b25;z-index:50}
+.account-popover[hidden]{display:none}
+.account-popover button{display:block;width:100%;padding:11px 14px;text-align:left;border:0;border-radius:5px;background:transparent;color:inherit;font:inherit;font-size:14px;cursor:pointer}
+.account-popover button:hover,.account-popover button:focus-visible{background:var(--ref-bg);color:var(--ref-blue)}
+.account-popover button:last-child{border-top:1px solid var(--line);border-radius:0;margin-top:4px}
+
+.header .account-popover button{color:var(--ref-ink)!important}.header .account-popover button:hover,.header .account-popover button:focus-visible{color:var(--ref-blue)!important}
