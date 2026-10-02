@@ -222,5 +222,5 @@
   document.addEventListener('click',e=>{if(!e.target.closest('#header-search'))hideSearch();});document.addEventListener('keydown',e=>{if(e.key==='Escape')hideSearch();if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();search.focus();}});
   addEventListener('hashchange',()=>{if(working||(dirty&&!confirm('离开编辑？尚未发布的内容会保留在设备草稿中。'))){history.replaceState(null,'',lastHash||'#/');return;}backup();editing=null;dirty=false;lastHash=location.hash;render();scrollTo(0,0);});
   addEventListener('beforeunload',e=>{backup();if(dirty||working){e.preventDefault();e.returnValue='';}});document.addEventListener('visibilitychange',()=>{if(document.hidden)backup();});
-  document.getElementById('year').textContent=new Date().getFullYear();render();
+  render();
 })();
