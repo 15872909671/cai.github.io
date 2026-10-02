@@ -4,7 +4,7 @@
   const main=document.getElementById('main'),nav=document.getElementById('nav'),account=document.getElementById('account-button');
   const boards={knowledge:'技术博客',projects:'作品集',interviews:'面试经历',tools:'工具',photos:'相册',essays:'随笔'};
   const siteOwner='430ef651-e7f9-4979-96e1-67e6bca2814d';
-  let mine=null,epoch=0,editing=null,dirty=false,working=false,backupTimer=null,lastHash=location.hash,searchEpoch=0;
+  let authorNavProfile=null,mine=null,epoch=0,editing=null,dirty=false,working=false,backupTimer=null,lastHash=location.hash,searchEpoch=0;
   const isGlobalRoute=hash=>/^#\/(?:$|(?:home|posts|knowledge|projects|interviews|essays|tools|photos|guestbook|career)(?:[?]|$))/.test(hash);
   let returnToGlobal='#/';
   try{const saved=sessionStorage.getItem('cai:return-to-global');if(saved&&isGlobalRoute(saved))returnToGlobal=saved;}catch{}
@@ -43,7 +43,8 @@
   const navSpecs=[['home','主页','⌂'],['space','空间','▱'],['posts','论坛','▤'],['tools','工具','⚒']];
   function navigation(profile=null,folders=[],currentBoard=null){
     const href=k=>k==='home'?'#/':'#/'+k;
-    nav.innerHTML=`<div class="mega-tabs">${navSpecs.map(([key,label,icon])=>`<a class="mega-tab" href="${href(key)}"><span aria-hidden="true">${icon}</span>${label}</a>`).join('')}</div>`;
+    authorNavProfile=profile;
+    if(!profile)nav.innerHTML=`<div class="mega-tabs">${navSpecs.map(([key,label,icon])=>`<a class="mega-tab" href="${href(key)}"><span aria-hidden="true">${icon}</span>${label}</a>`).join('')}</div>`;
     nav.classList.toggle('author-nav',!!profile);
     if(profile){
       const view=route().query.get('view'),active=view==='guestbook'?'guestbook':view==='moments'||currentBoard==='moments'?'moments':'blog';
@@ -135,7 +136,7 @@
     root.querySelectorAll('[data-reply]').forEach(b=>b.onclick=()=>{reply=b.dataset.reply;const original=data.items.find(c=>c.id===reply);form.querySelector('#reply-to').hidden=false;form.querySelector('#reply-to').textContent='回复 '+displayName(original.author)+'：'+original.body.slice(0,80);form.querySelector('[data-cancel-reply]').hidden=false;form.elements.body.focus();});
     form?.querySelector('[data-cancel-reply]').addEventListener('click',()=>{reply=null;form.querySelector('#reply-to').hidden=true;form.querySelector('[data-cancel-reply]').hidden=true;});
     if(form)form.onsubmit=e=>{e.preventDefault();const body=form.elements.body.value.trim();if(!body)return;job(async()=>{await A.comment({body,post_id:ctx.postId||null,space_id:ctx.spaceId||null,parent_id:reply});form.elements.body.value='';reply=null;toast('已发表。');await comments(ctx,root,ticket,1);},root);};
-    root.querySelectorAll('[data-delete-comment]').forEach(b=>b.onclick=()=>{if(confirm('删除这条评论？回复关系会保留。'))job(async()=>{await A.rpc('blog_delete_comment',{target:b.dataset.deleteComment},true);await comments(ctx,root,ticket,page);},root);});
+    root.querySelectorAll('[data-delete-comment]').forEach(b=>b.onclick=()=>{if(confirm('删除这条评论？'))job(async()=>{await A.rpc('blog_delete_comment',{target:b.dataset.deleteComment},true);await comments(ctx,root,ticket,page);},root);});
     root.querySelector('[data-comments-prev]')?.addEventListener('click',()=>comments(ctx,root,ticket,page-1).catch(e=>toast(e.message,true)));
     root.querySelector('[data-comments-next]')?.addEventListener('click',()=>comments(ctx,root,ticket,page+1).catch(e=>toast(e.message,true)));
   }
@@ -193,7 +194,11 @@
     main.querySelectorAll('[data-remove-image]').forEach(b=>b.onclick=()=>{if(confirm('删除这张未被帖子引用的图片？'))job(async()=>{await A.removeImage(b.dataset.removeImage);await render();toast('图片占用已清理。');});});
   }
   async function render(){
-    const ticket=++epoch;navigation();main.setAttribute('aria-busy','true');const {parts:[page,id],query}=route();
+    const ticket=++epoch;main.setAttribute('aria-busy','true');const {parts:[page,id],query}=route();
+    const authorRoute=['u','post','article','project','interview','essay','write','edit','folder','space','moments'].includes(page);
+    if(!authorRoute)navigation();
+    else if(page==='u'&&authorNavProfile?.username===id)navigation(authorNavProfile);
+
     try{
       if(['post','article','project','interview','essay'].includes(page))await article(id,ticket);
       else if(page==='u'){

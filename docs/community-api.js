@@ -53,7 +53,7 @@
   }
   async function commentPage({postId=null,spaceId=null,page=1}){
     const query='post_id='+(postId?'eq.'+encode(postId):'is.null')+'&space_id='+(spaceId?'eq.'+encode(spaceId):'is.null');
-    const rows=await C.request('/rest/v1/blog_comments?select=*&'+query+'&order=created_at.desc,id.desc&limit=21&offset='+((page-1)*20),{auth:!!C.currentUser()});
+    const rows=await C.request('/rest/v1/blog_comments?select=*&'+query+'&deleted=eq.false&order=created_at.desc,id.desc&limit=21&offset='+((page-1)*20),{auth:!!C.currentUser()});
     const visible=rows.slice(0,20),ids=[...new Set(visible.map(x=>x.author_id))];
     const authors=ids.length?await C.request('/rest/v1/blog_profiles?select=user_id,username,display_name&user_id=in.('+ids.map(encode).join(',')+')'):[];
     return {items:visible.map(c=>({...c,author:authors.find(a=>a.user_id===c.author_id)})),more:rows.length>20};
