@@ -238,3 +238,12 @@ body.is-home .footer{display:none}
 .account-popover button:last-child{border-top:1px solid var(--line);border-radius:0;margin-top:4px}
 
 .header .account-popover button{color:var(--ref-ink)!important}.header .account-popover button:hover,.header .account-popover button:focus-visible{color:var(--ref-blue)!important}
+
+.profile-page{max-width:760px;margin:0 auto}
+.profile-page-head{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:24px}.profile-page-head h1{font-size:28px;margin:0}.profile-page-head a{font-size:13px;color:var(--ref-muted)}
+.profile-page .profile-sheet{max-width:none;margin:0;padding:32px;background:var(--ref-card);border:1px solid var(--line);border-radius:12px}
+.profile-identity{display:flex;align-items:center;gap:16px;margin-bottom:30px}.profile-identity .user-avatar{width:64px;height:64px;font-size:25px}.profile-identity strong{display:block;font-size:20px}.profile-identity div>span{display:block;margin-top:6px;color:var(--ref-muted);font-size:13px}
+.profile-sheet label{font-size:14px}.profile-sheet .field-help{display:block;margin:6px 0 0}.profile-sheet input[readonly]{color:var(--ref-muted);cursor:text}
+.profile-account{margin-top:24px;border-top:1px solid var(--line);padding-top:18px}.profile-account summary,.profile-management summary{cursor:pointer;font-size:14px;color:var(--ref-muted)}
+.profile-save{margin-top:26px}.profile-management{margin-top:24px;padding:22px;background:var(--ref-card);border:1px solid var(--line);border-radius:12px}.profile-management>summary span{margin-left:12px;font-size:12px}.profile-management .usage-panel{margin:20px 0}
+@media(max-width:760px){.profile-page .profile-sheet{padding:22px}.profile-page-head{align-items:flex-start}.profile-page-head h1{font-size:24px}.profile-management>summary span{display:block;margin:8px 0 0}}
