@@ -87,7 +87,7 @@
     main.querySelector('[data-folder-create]')?.addEventListener('click',()=>folderCreate(board,folder));
     main.querySelector('[data-folder-manage]')?.addEventListener('click',()=>folderManage(selected,folders));
   }
-  const treeOpen=new Map();
+  const treeOpen=new Map(),treeSelection=new Map();
   function documentTree(profile,folders,titles,selectedFolder=null,selectedPost=null,search='',drafts=false){
     const owner=profile.user_id===who(),open=treeOpen.get(profile.user_id)||new Set(),phrase=search.toLocaleLowerCase(),keep=new Set();
     const mark=id=>{const seen=new Set();let f=folders.find(x=>x.id===id);while(f&&!seen.has(f.id)){seen.add(f.id);keep.add(f.id);f=folders.find(x=>x.id===f.parent_id);}};
@@ -100,13 +100,17 @@
   function bindDocumentTree(profile,folders,titles,folderId=null){
     main.classList.add('is-documents');
     const root=main.querySelector('.document-tree');if(!root)return;
-    const folder=folders.find(f=>f.id===folderId),board=folder?.collection||'knowledge';
-    root.querySelector('#scoped-search').onsubmit=e=>{e.preventDefault();location.hash=spaceURL(profile,{q:e.currentTarget.elements.q.value});};
+    if(folderId)treeSelection.set(profile.user_id,folderId);
+    const selectedFolder=()=>folders.find(f=>f.id===treeSelection.get(profile.user_id));
+    root.querySelectorAll('details[data-tree-folder]>summary>a').forEach(link=>link.onclick=e=>{e.preventDefault();e.stopPropagation();const detail=link.closest('details');treeSelection.set(profile.user_id,detail.dataset.treeFolder);root.querySelectorAll('summary').forEach(x=>x.classList.remove('tree-selected'));link.closest('summary').classList.add('tree-selected');detail.open=!detail.open;});
+    const filterTree=(search,drafts)=>{const post=route().parts[0]==='post'||route().parts[0]==='edit'?route().parts[1]:null;root.closest('.sidebar-content').innerHTML=documentTree(profile,folders,titles,treeSelection.get(profile.user_id),post,search,drafts);bindDocumentTree(profile,folders,titles,treeSelection.get(profile.user_id));};
+    root.querySelector('#scoped-search').onsubmit=e=>{e.preventDefault();filterTree(e.currentTarget.elements.q.value.trim(),false);};
+    root.querySelector('.tree-view-tools>a')?.addEventListener('click',e=>{e.preventDefault();filterTree('',e.currentTarget.textContent==='草稿');});
     root.querySelector('[data-expand]').onclick=()=>root.querySelectorAll('details').forEach(d=>d.open=true);
     root.querySelector('[data-collapse]').onclick=()=>root.querySelectorAll('details').forEach(d=>d.open=false);
     root.querySelectorAll('details[data-tree-folder]').forEach(d=>d.addEventListener('toggle',()=>{const open=treeOpen.get(profile.user_id)||new Set();d.open?open.add(d.dataset.treeFolder):open.delete(d.dataset.treeFolder);treeOpen.set(profile.user_id,open);}));
-    root.querySelector('[data-tree-new-post]')?.addEventListener('click',()=>writeNew(board,folderId));
-    root.querySelector('[data-tree-new-folder]')?.addEventListener('click',()=>folderCreate(board,folderId));
+    root.querySelector('[data-tree-new-post]')?.addEventListener('click',()=>{const f=selectedFolder();writeNew(f?.collection||'knowledge',f?.id||null);});
+    root.querySelector('[data-tree-new-folder]')?.addEventListener('click',()=>{const f=selectedFolder();folderCreate(f?.collection||'knowledge',f?.id||null);});
     if(profile.user_id!==who())return;
     const sidebar=root.closest('aside');
     const actions=(target)=>{
@@ -118,7 +122,7 @@
         ['编辑',()=>{location.hash='#/edit/'+enc(p.id);}],
         ['重命名',()=>renameTreeItem(row.querySelector('a'),p,false)],
         ['移动',()=>job(async()=>{const latest=await A.post(p.id);movePost(latest,folders.filter(f=>f.collection===latest.collection));},main)],
-        ['删除',async()=>{if(!await confirmDelete('永久删除“'+p.title+'”及其评论？'))return;job(async()=>{const latest=await A.post(p.id);await A.rpc('blog_file_operation',{action:'delete_post',target_id:p.id,expected_version:latest.version},true);location.hash=spaceURL(profile,p.folder_id?{folder:p.folder_id}:{});await render();},main);},'danger']
+        ['删除',async()=>{if(!await confirmDelete('永久删除“'+p.title+'”及其评论？'))return;job(async()=>{const latest=await A.post(p.id);await A.rpc('blog_file_operation',{action:'delete_post',target_id:p.id,expected_version:latest.version},true);if(['post','edit'].includes(route().parts[0])&&route().parts[1]===p.id){location.hash=spaceURL(profile);await render();}else await refreshWorkspaceTree();},main);},'danger']
       ];
       return [['新建文件',()=>writeNew(collection,parent)],['新建文件夹',()=>folderCreate(collection,parent)],...(f?[
         ['重命名',()=>renameTreeItem(summary.querySelector('a'),f,true)],
@@ -149,19 +153,27 @@
     const old=isFolder?item.name:item.title,input=document.createElement('input');input.className='tree-rename';input.value=old;input.maxLength=isFolder?100:200;input.setAttribute('aria-label',isFolder?'文件夹名称':'文件名称');
     label.hidden=true;label.after(input);input.focus();input.select();let done=false;
     const cancel=()=>{if(done)return;done=true;input.remove();label.hidden=false;};
-    input.onclick=e=>e.stopPropagation();input.onkeydown=e=>{e.stopPropagation();if(e.key==='Escape'){e.preventDefault();cancel();}if(e.key==='Enter'){e.preventDefault();const name=input.value.trim();if(!name){input.setCustomValidity('名称不能为空');input.reportValidity();return;}if(name===old)return cancel();done=true;input.disabled=true;job(async()=>{try{if(isFolder)await A.rpc('blog_file_operation',{action:'rename_folder',target_id:item.id,expected_version:item.version,new_name:name},true);else {const latest=await A.post(item.id);await C.save({id:item.id,title:name},latest.version);}await render();toast('已重命名。');}finally{input.remove();label.hidden=false;}},main);}};input.onblur=cancel;
+    input.onclick=e=>e.stopPropagation();input.onkeydown=e=>{e.stopPropagation();if(e.key==='Escape'){e.preventDefault();cancel();}if(e.key==='Enter'){e.preventDefault();const name=input.value.trim();if(!name){input.setCustomValidity('名称不能为空');input.reportValidity();return;}if(name===old)return cancel();done=true;input.disabled=true;job(async()=>{try{if(isFolder)await A.rpc('blog_file_operation',{action:'rename_folder',target_id:item.id,expected_version:item.version,new_name:name},true);else {const latest=await A.post(item.id);await C.save({id:item.id,title:name},latest.version);}if(isFolder)await refreshWorkspaceTree();else await render();toast('已重命名。');}finally{input.remove();label.hidden=false;}},main);}};input.onblur=cancel;
+  }
+  function documentTab(profile,title){
+    const pane=main.querySelector('.file-pane'),bar=document.createElement('div');bar.className='document-tabbar';
+    bar.innerHTML=`<div class="document-tab"><span>${E(title||'未命名文件')}</span><a href="${spaceURL(profile)}" aria-label="关闭文件" title="关闭文件">×</a></div>`;pane.prepend(bar);
+  }
+  async function refreshWorkspaceTree(){
+    if(!main.classList.contains('is-documents')||!authorNavProfile){await render();return;}
+    const profile=authorNavProfile,ticket=epoch,[folders,titles]=await Promise.all([A.folders(profile.user_id),A.titles(profile.user_id)]);if(ticket!==epoch)return;
+    const state=route(),post=['edit','post'].includes(state.parts[0])?state.parts[1]:null;
+    main.querySelector('.sidebar-content').innerHTML=documentTree(profile,folders,titles,treeSelection.get(profile.user_id),post);
+    bindDocumentTree(profile,folders,titles,treeSelection.get(profile.user_id));
   }
   async function authorFiles(query,profile,ticket){
     const owner=profile.user_id===who(),folderId=query.get('folder'),drafts=query.get('view')==='drafts',search=(query.get('q')||'').trim();
     if(drafts&&!owner)throw Error('草稿仅作者本人可见。');
     const [folders,titles]=await Promise.all([A.folders(profile.user_id),A.titles(profile.user_id)]);if(ticket!==epoch)return;
     const selected=folders.find(f=>f.id===folderId);if(folderId&&!selected)throw Error('文件夹不存在或不可访问。');
-    const title=selected?.name||'全部文件',rows=[...folders.filter(f=>(f.parent_id||null)===(folderId||null)).map(f=>({name:f.name,url:spaceURL(profile,{folder:f.id}),type:'文件夹',icon:'▤'})),...titles.filter(p=>(p.folder_id||null)===(folderId||null)&&(!drafts||!p.published)).map(p=>({name:p.title,url:postURL(p.id),type:p.published?'帖子':'草稿',icon:'▧'}))];
-    show(title,`<section class="document-directory"><header class="author-files-head"><h1>${E(title)}</h1><div class="community-actions">${owner?'<button class="forum-primary" data-write>新建帖子</button><button data-folder-create>新建文件夹</button>':''}${owner&&selected?'<button data-folder-manage>管理文件夹</button>':''}</div></header>${rows.length?`<div class="document-rows">${rows.map(x=>`<a href="${x.url}"><span>${x.icon}</span><strong>${E(x.name)}</strong><small>${x.type}</small></a>`).join('')}</div>`:'<div class="document-empty">从左侧选择文件，或新建一篇帖子。</div>'}</section>`,documentTree(profile,folders,titles,folderId,null,search,drafts));
+    show('博客',`<section class="workspace-empty" aria-label="文件工作区"><span>从左侧打开文件</span></section>`,documentTree(profile,folders,titles,folderId,null,search,drafts));
     navigation(profile);bindDocumentTree(profile,folders,titles,folderId);
-    main.querySelector('[data-write]')?.addEventListener('click',()=>writeNew(selected?.collection||'knowledge',folderId));
-    main.querySelector('[data-folder-create]')?.addEventListener('click',()=>folderCreate(selected?.collection||'knowledge',folderId));
-    main.querySelector('[data-folder-manage]')?.addEventListener('click',()=>folderManage(selected,folders));
+
   }
   async function momentPage(query,ticket,profile=null){
     const page=Math.max(1,Number(query.get('page'))||1),data=await A.moments(page,profile?.user_id);if(ticket!==epoch)return;
@@ -175,7 +187,7 @@
     const [folders,titles]=await Promise.all([A.folders(p.owner_id),A.titles(p.owner_id)]);if(ticket!==epoch)return;
     const meta=p.metadata||{};
     show(p.title,`${breadcrumbs(p.author,p.collection,folders,p.folder_id,'帖子')}<article class="article community-article">${owner?'<div class="post-owner-actions"><button data-edit>编辑</button><button data-move>移动到文件夹</button><button data-delete class="danger">删除帖子</button></div>':''}<div class="post-byline">${userLink(p.author)}<span>${date(p.created_at)} · 约 ${Math.max(1,Math.ceil(p.body.replace(/\s/g,'').length/400))} 分钟${p.published?'':' · 草稿'}</span></div><h1>${E(p.title)}</h1>${p.summary?`<p class="lead">${E(p.summary)}</p>`:''}<div class="entry-meta">${(meta.tags||[]).map(t=>`<span class="tag">${E(t)}</span>`).join('')}</div>${meta.demo===true?'<p class="notice">示例模板，不代表真实经历。</p>':''}<div class="hero-actions">${[['github','GitHub'],['demo','演示'],['url','打开工具']].map(([key,label])=>safe(meta[key])?`<a class="button secondary" href="${safe(meta[key])}" target="_blank" rel="noopener noreferrer">${label} ↗</a>`:'').join('')}</div><div class="article-body">${M.render(p.body)}</div></article><section id="comments" class="comments-section"></section>`,documentTree(p.author,folders,titles,p.folder_id,p.id));
-    bindDocumentTree(p.author,folders,titles,p.folder_id);main.classList.add('is-reading');navigation(p.author,folders,p.metadata?.kind==='moment'?'moments':p.collection);
+    bindDocumentTree(p.author,folders,titles,p.folder_id);main.classList.add('is-reading');documentTab(p.author,p.title);navigation(p.author,folders,p.metadata?.kind==='moment'?'moments':p.collection);
     const headings=[...main.querySelectorAll('.article-body h2,.article-body h3,.article-body h4')];if(headings.length){const toc=document.createElement('nav');toc.className='toc';toc.innerHTML='<h3>本文目录</h3>'+headings.map((h,i)=>{h.id='heading-'+i;return `<button data-heading="${i}">${E(h.textContent)}</button>`;}).join('');main.querySelector('.file-pane').append(toc);toc.querySelectorAll('button').forEach(b=>b.onclick=()=>headings[Number(b.dataset.heading)].scrollIntoView({behavior:'smooth'}));}
     C.hydrateImages(main,!!who());
     main.querySelectorAll('.article-body img').forEach(img=>img.onclick=()=>{if(!img.src)return;const viewer=document.createElement('dialog');viewer.className='image-viewer';const copy=img.cloneNode();copy.removeAttribute('loading');const close=document.createElement('button');close.textContent='关闭';close.onclick=()=>viewer.close();viewer.append(copy,close);document.body.append(viewer);viewer.addEventListener('close',()=>viewer.remove());viewer.showModal();});
@@ -202,9 +214,9 @@
     const path=f=>{let names=[f.name],current=f;const seen=new Set([f.id]);while(current.parent_id){current=folders.find(x=>x.id===current.parent_id);if(!current||seen.has(current.id))break;seen.add(current.id);names.unshift(current.name);}return names.join(' / ');};
     return '<option value="">栏目根目录</option>'+folders.filter(f=>!blocked.has(f.id)).map(f=>`<option value="${E(f.id)}" ${f.id===value?'selected':''}>${E(path(f))}</option>`).join('');
   }
-  function folderCreate(board,parent){popup(`<form><h2>新建文件夹</h2><label>名称<input name="name" maxlength="100" required></label>${board?'':`<label>内容类型<select name="collection">${Object.entries(boards).map(([id,label])=>`<option value="${id}">${E(label)}</option>`).join('')}</select></label>`}<div class="dialog-actions"><button class="primary">创建</button><button type="button" data-close>取消</button></div></form>`);modal.querySelector('form').onsubmit=e=>{e.preventDefault();const name=e.currentTarget.elements.name.value.trim(),collection=board||e.currentTarget.elements.collection.value;if(!name)return;job(async()=>{const [folder]=await C.createFolder({id:crypto.randomUUID(),owner_id:who(),collection,parent_id:parent||null,name});modal.close();location.hash=spaceURL(mine,{folder:folder.id});toast('文件夹已创建。');},modal);};}
+  function folderCreate(board,parent){popup(`<form><h2>新建文件夹</h2><label>名称<input name="name" maxlength="100" required></label>${board?'':`<label>内容类型<select name="collection">${Object.entries(boards).map(([id,label])=>`<option value="${id}">${E(label)}</option>`).join('')}</select></label>`}<div class="dialog-actions"><button class="primary">创建</button><button type="button" data-close>取消</button></div></form>`);modal.querySelector('form').onsubmit=e=>{e.preventDefault();const name=e.currentTarget.elements.name.value.trim(),collection=board||e.currentTarget.elements.collection.value;if(!name)return;job(async()=>{const [folder]=await C.createFolder({id:crypto.randomUUID(),owner_id:who(),collection,parent_id:parent||null,name});modal.close();treeSelection.set(who(),folder.id);const open=treeOpen.get(who())||new Set();if(parent)open.add(parent);open.add(folder.id);treeOpen.set(who(),open);await refreshWorkspaceTree();toast('文件夹已创建。');},modal);};}
   function folderManage(folder,folders){popup(`<form><h2>管理文件夹</h2><label>名称<input name="name" value="${E(folder.name)}" maxlength="100" required></label><label>移入<select name="parent">${folderOptions(folders.filter(f=>f.collection===folder.collection),folder.parent_id,folder.id)}</select></label><div class="dialog-actions"><button class="primary">保存</button><button type="button" data-delete-folder>删除文件夹</button><button type="button" data-close>取消</button></div></form>`);
-    modal.querySelector('form').onsubmit=e=>{e.preventDefault();const f=e.currentTarget,name=f.elements.name.value.trim(),parent=f.elements.parent.value||null;if(!name)return;job(async()=>{let version=folder.version;if(parent!==folder.parent_id){await A.rpc('blog_file_operation',{action:'move_folder',target_id:folder.id,expected_version:version,new_parent:parent},true);version++;folder={...folder,parent_id:parent,version};}if(name!==folder.name){await A.rpc('blog_file_operation',{action:'rename_folder',target_id:folder.id,expected_version:version,new_name:name},true);}modal.close();await render();toast('合集已更新。');},modal);};
+    modal.querySelector('form').onsubmit=e=>{e.preventDefault();const f=e.currentTarget,name=f.elements.name.value.trim(),parent=f.elements.parent.value||null;if(!name)return;job(async()=>{let version=folder.version;if(parent!==folder.parent_id){await A.rpc('blog_file_operation',{action:'move_folder',target_id:folder.id,expected_version:version,new_parent:parent},true);version++;folder={...folder,parent_id:parent,version};}if(name!==folder.name){await A.rpc('blog_file_operation',{action:'rename_folder',target_id:folder.id,expected_version:version,new_name:name},true);}modal.close();await refreshWorkspaceTree();toast('文件夹已更新。');},modal);};
     modal.querySelector('[data-delete-folder]').onclick=()=>deleteFolder(folder,modal);
   }
   function deleteFolder(folder,scope){return job(async()=>{
@@ -216,7 +228,7 @@
         for(const title of posts){const p=await A.post(title.id);if(!p)continue;if(!ids.has(p.folder_id))throw Error('帖子已被移动，请刷新后重试。');await A.rpc('blog_file_operation',{action:'delete_post',target_id:p.id,expected_version:p.version},true);removed++;}
         for(const f of ordered.reverse()){await A.rpc('blog_file_operation',{action:'delete_folder',target_id:f.id,expected_version:f.version},true);removed++;}
       }catch(error){throw Error((removed?'已删除 '+removed+' 项，其余内容保留。':'')+error.message);}
-      modal.close();location.hash=spaceURL(mine,root.parent_id?{folder:root.parent_id}:{});await render();toast('文件夹已删除。');
+      modal.close();treeSelection.set(who(),root.parent_id||null);if(['post','edit'].includes(route().parts[0])&&posts.some(p=>p.id===route().parts[1])){location.hash=spaceURL(mine);await render();}else await refreshWorkspaceTree();toast('文件夹已删除。');
     },scope);
   }
 
@@ -236,7 +248,7 @@
     editing=structuredClone(post);dirty=!!recovered;
     const meta=post.metadata||{},project=post.collection==='projects',tool=post.collection==='tools';
     show(post.version?'编辑帖子':'写帖子',`<section class="inline-editor"><form id="community-editor"><label class="title-field"><span class="sr-only">标题</span><input placeholder="给帖子起一个标题" name="title" value="${E(post.title)}" maxlength="200" required></label><div class="document-editor-tools"><label class="visibility-field"><span>可见范围</span><select name="visibility" aria-describedby="visibility-hint"><option value="private" ${!post.published?'selected':''}>仅自己可见</option><option value="public" ${post.published?'selected':''}>公开</option></select></label><span id="visibility-hint">${post.published?'公开，保存后在论坛可见':'仅自己可见，不展示在论坛'}</span><div class="community-actions"><button type="button" data-import>导入 Markdown</button><input type="file" id="markdown-upload" accept=".md,.markdown,text/markdown" hidden><button type="button" data-export>导出 Markdown</button></div></div><details class="editor-metadata"><summary>发布设置<span>文件夹、摘要与标签</span></summary><div class="editor-options"><label>所在文件夹<select name="folder">${folderOptions(folders,post.folder_id)}</select></label><label>摘要<input name="summary" value="${E(post.summary)}" maxlength="500"></label></div><label>标签<input name="tags" value="${E((meta.tags||[]).join('，'))}" maxlength="500" placeholder="用逗号分隔"></label></details>${project?`<div class="editor-options"><label>GitHub 地址<input name="github" type="url" pattern="https?://.*" value="${E(meta.github||'')}"></label><label>演示地址<input name="demoURL" type="url" pattern="https?://.*" value="${E(typeof meta.demo==='string'?meta.demo:'')}"></label></div>`:''}${tool?`<label>工具链接<input name="toolURL" type="url" pattern="https?://.*" value="${E(meta.url||'')}" required></label>`:''}<div class="writing-controls"><div class="editor-tabs"><button type="button" data-mode="edit" aria-pressed="true">编辑</button><button type="button" data-mode="split">对照</button><button type="button" data-mode="preview">预览</button></div><span id="word-count">${post.body.length} 字</span></div><div class="format-toolbar"><button type="button" data-format="heading">H2</button><button type="button" data-format="bold">加粗</button><button type="button" data-format="list">列表</button><button type="button" data-format="code">代码</button><button type="button" data-image>上传图片</button><input type="file" id="image-upload" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden></div>${post.collection==='photos'?'<p class="field-help">上传图片并配上说明，发布后会出现在相册栏目。</p>':''}<div class="writing-surface" data-mode="edit"><label id="editor-body-label"><span class="sr-only">正文</span><textarea name="body" placeholder="从这里开始写作，支持 Markdown 和粘贴图片…" maxlength="200000" spellcheck="false">${E(post.body)}</textarea></label><div id="editor-preview" class="article-body" hidden></div></div><div class="publish-bar"><span id="save-state">${recovered?'已恢复设备草稿':'尚未修改'}</span><button class="primary" type="submit">${post.published?'保存并公开':'保存'}</button></div></form></section>`,documentTree(mine,allFolders,treeTitles,post.folder_id,post.id));
-    bindDocumentTree(mine,allFolders,treeTitles,post.folder_id);main.classList.add('is-writing');navigation(mine,folders,post.collection);
+    bindDocumentTree(mine,allFolders,treeTitles,post.folder_id);main.classList.add('is-writing');documentTab(mine,post.title);navigation(mine,folders,post.collection);
     const form=main.querySelector('#community-editor'),area=form.elements.body,preview=main.querySelector('#editor-preview');
     form.addEventListener('invalid',e=>{const group=e.target.closest('details');if(group)group.open=true;},true);
     const sync=()=>{editing={...editing,title:form.elements.title.value,summary:form.elements.summary.value,body:area.value,folder_id:form.elements.folder.value||null,metadata:{...editing.metadata,tags:form.elements.tags.value.split(/[,，]/).map(x=>x.trim()).filter(Boolean)}};if(project){editing.metadata.github=form.elements.github.value.trim();editing.metadata.demo=form.elements.demoURL.value.trim()||(meta.demo===true?true:'');}if(tool)editing.metadata.url=form.elements.toolURL.value.trim();editing.metadata.cover=editing.body.match(/!\[[^\]]*\]\(media:([\w-]+\/[\w.-]+)\)/)?.[1]||'';dirty=true;main.querySelector('#word-count').textContent=area.value.replace(/\s/g,'').length+' 字';main.querySelector('#save-state').textContent='正在备份…';clearTimeout(backupTimer);backupTimer=setTimeout(backup,600);if(!preview.hidden){preview.innerHTML=M.render(editing.body);C.hydrateImages(preview,true);}};
