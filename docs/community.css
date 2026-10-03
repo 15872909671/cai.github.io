@@ -207,7 +207,7 @@ body.is-home .footer{display:none}
 .header #nav.author-nav{flex-basis:580px;width:580px}
 .header #nav.author-nav .mega-tabs{grid-template-columns:minmax(130px,2fr) repeat(4,minmax(50px,1fr))}
 .header #nav .space-identity{display:flex;align-items:center;gap:10px;min-width:0;padding:8px 10px;background:none;border:0}
-.space-identity>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.space-identity .space-label{display:flex;min-width:0;white-space:nowrap}.space-owner-name{min-width:0;overflow:hidden;text-overflow:ellipsis}.space-label-suffix{flex-shrink:0}.space-identity .avatar{flex-shrink:0}
 .header #nav.author-nav .mega-tab{justify-content:center}
 .header .account-button .user-avatar{width:30px;height:30px}
 .site-switcher{position:relative;flex-shrink:0}
