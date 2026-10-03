@@ -99,4 +99,15 @@ assert.equal(page1.total,25);assert.equal(page1.items.length,20);assert.equal(pa
 // Quota includes metadata; cannot evade by placing text in metadata.
 for(let i=0;i<10;i++)await db.query("insert into blog_posts(id,collection,title,body) values($1,'essays','Large',$2)",['large-'+i,'x'.repeat(190000)]);
 await fail("insert into blog_posts(id,collection,title,body) values('over','essays','Large',$1)",['x'.repeat(200000)]);
+await db.exec('reset role');
+const reactions=await readFile('supabase/reactions.sql','utf8');await db.exec(reactions);await db.exec(reactions);
+await role('anon');await fail("select blog_react('b-public',1::smallint)");await fail('select * from blog_reactions');
+await role('authenticated',U);await fail("select blog_react('b-public',1::smallint)");
+await role('authenticated',A);await fail("select blog_react('a-draft',1::smallint)");await fail("select blog_react('b-public',2::smallint)");
+const vote=async(value)=>(await db.query("select blog_react('b-public',$1::smallint) as data",[value])).rows[0].data;
+assert.equal((await vote(1)).likes,1);assert.equal((await vote(1)).likes,1);let count=await vote(-1);assert.equal(count.likes,0);assert.equal(count.dislikes,1);assert.equal(count.mine,-1);assert.equal((await vote(0)).dislikes,0);await vote(1);
+await role('authenticated',B);count=await vote(-1);assert.equal(count.likes,1);assert.equal(count.dislikes,1);assert.equal(count.mine,-1);
+await role('anon');count=(await db.query("select blog_post_interactions(array['b-public','a-draft']) as data")).rows[0].data;assert.equal(count.length,1);assert.equal(count[0].mine,0);assert.equal(count[0].likes,1);
+await role('authenticated',B);await db.query("update blog_posts set published=false where id='b-public'");assert.equal((await db.query("select blog_post_interactions(array['b-public']) as data")).rows[0].data.length,0);await fail("select blog_react('b-public',1::smallint)");
+await db.exec('reset role');await db.query("delete from blog_posts where id='b-public'");assert.equal((await db.query("select count(*)::int as n from blog_reactions where post_id='b-public'")).rows[0].n,0);
 await db.close();console.log('PASS: repeatable legacy migration, two-user isolation, anonymous/unverified denial, ownership FKs, comments/replies/moderation, drafts, private images, byte quotas, server search and disjoint pagination.');
