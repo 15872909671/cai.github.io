@@ -301,3 +301,44 @@ body.global-shell.is-home .home-art{inset:64px 0 0;background:#7bbedb url('https
 .about-page{max-width:960px;margin:0 auto;padding:36px 0}.about-identity{display:flex;align-items:center;gap:20px}.about-identity>.user-avatar{width:68px;height:68px;font-size:28px}.about-kicker{font-size:12px;color:var(--ref-muted)}.about-identity h1{font-size:32px;margin:4px 0 0;line-height:1.3;overflow-wrap:anywhere}.about-edit{margin-left:auto;background:var(--ref-card);border:1px solid var(--line);border-radius:6px;padding:8px 14px;color:var(--ref-ink);cursor:pointer;white-space:nowrap}.about-bio{white-space:pre-wrap;line-height:1.9;max-width:740px;margin:28px 0 20px;color:var(--ref-muted);overflow-wrap:anywhere}.about-links{display:flex;gap:24px;flex-wrap:wrap;margin:24px 0 36px;font-size:13px;color:#328aa2}.about-featured{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.about-post{display:block;position:relative;background:var(--ref-card);border:1px solid var(--line);border-radius:8px;padding:26px 48px 26px 26px;min-height:150px;box-sizing:border-box}.about-post:hover{border-color:#328aa280}.about-post-type{font-size:11px;color:#328aa2}.about-post h2{font-size:20px;line-height:1.5;margin:12px 0 8px;overflow-wrap:anywhere}.about-post p{font-size:13px;color:var(--ref-muted);line-height:1.8;margin:0;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}.about-post-arrow{position:absolute;right:22px;top:26px;color:#328aa2}.about-add{padding:28px;width:100%;background:transparent;border:1px dashed var(--line);color:var(--ref-muted);border-radius:8px;cursor:pointer}.about-selection{padding:0;list-style:none}.about-selection li{display:flex;align-items:center;gap:6px;padding:8px 0;border-bottom:1px solid var(--line)}.about-selection li>span{flex:1;min-width:0;overflow-wrap:anywhere;font-size:13px}.about-selection button{padding:4px 8px!important}#about-form textarea{width:100%;box-sizing:border-box;background:var(--ref-bg);color:var(--ref-ink);border:1px solid var(--line);border-radius:6px;padding:10px;font:inherit;resize:vertical;margin-top:8px}@media(max-width:760px){.about-page{padding:12px 0}.about-featured{grid-template-columns:1fr}.about-identity{gap:12px;flex-wrap:wrap}.about-identity h1{font-size:25px}.about-identity>.user-avatar{width:50px;height:50px;font-size:22px}.about-post{min-height:120px}.about-edit{font-size:12px}}
 
 .showcase-group{margin-top:40px}.showcase-group>h2{font-size:22px;margin:0 0 18px}.showcase-title{color:inherit;text-decoration:none}.showcase-title h3{font-size:20px;margin:0 0 14px}.showcase-links{display:flex;flex-wrap:wrap;gap:18px;margin-top:24px;font-size:13px}.showcase-links a{color:var(--accent,#3676c8)}.showcase-group-list{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}.showcase-group-list button[aria-pressed=true]{background:#326cca;color:white;border-color:#326cca}.showcase-manager{padding:16px 0;border-bottom:1px solid var(--line,#ccd5df)}.showcase-group-editor{padding-top:20px}.showcase-group-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 20px}.showcase-group-actions [data-group-delete]{margin-left:auto;color:#c65b5b}
+/* Public profile: ocean cover, overlapping identity card, then curated collections. */
+#main.is-about>.community-container{max-width:none;padding:55px 0 80px}
+.about-page{max-width:none;padding:0}
+.about-cover{height:clamp(280px,35vw,430px);background:#357d99 url('https://images.unsplash.com/photo-1559653367-4a45ab1ced27?auto=format&fit=crop&w=2400&q=85') center 55%/cover}
+.about-content{position:relative;max-width:1100px;margin:-76px auto 0;padding:0 32px}
+.about-card{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:18px 28px;padding:34px 40px;background:var(--ref-card,#fff);border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 48px #143e5b0d}
+.about-card .about-identity{min-width:0;gap:18px}
+.about-card .about-identity h1{font-size:clamp(26px,3vw,36px);font-weight:600;letter-spacing:-.7px;margin:0}
+.about-card .user-avatar{width:64px;height:64px;font-size:26px;background:#e4f0f4;color:#28657b}
+.about-card .about-edit{font-size:12px;padding:7px 12px;margin:0;align-self:start;background:transparent}
+.about-card .about-bio{grid-column:1/-1;margin:0;max-width:760px;font-size:15px;line-height:1.9}
+.about-card .about-links{grid-column:1/-1;align-items:center;margin:2px 0 0;gap:24px;font-size:14px}
+.about-blog-link{display:inline-flex;align-items:center;gap:36px;padding:12px 20px;border-radius:5px;background:#246b80;color:#fff!important;transition:background .15s}
+.about-blog-link:hover{background:#1d5668}
+.about-collections{padding:8px 8px 0}
+.about-collections .showcase-group{margin-top:44px}
+.about-collections .showcase-group>h2{display:flex;align-items:center;gap:18px;font-size:20px;font-weight:500;margin:0 0 20px}
+.about-collections .showcase-group>h2:after{content:'';height:1px;background:var(--line);flex:1}
+.about-collections .about-featured{gap:18px}
+.about-collections .about-post{padding:26px 28px;min-height:180px;display:flex;flex-direction:column;border-radius:8px;transition:border-color .15s,box-shadow .15s}
+.about-collections .about-post:hover{border-color:#4593a6;box-shadow:0 6px 24px #143e5b08}
+.about-collections .showcase-title h3{font-size:18px;line-height:1.65;font-weight:600;margin:0 0 12px;overflow-wrap:anywhere}
+.about-collections .showcase-title:hover{color:#328aa2}
+.about-collections .about-post p{font-size:14px;line-height:1.85;margin-bottom:24px}
+.about-collections .showcase-links{margin-top:auto;padding-top:16px;gap:22px;font-size:13px}
+.about-collections .showcase-links a{color:#328aa2}
+.about-page a:focus-visible,.about-page button:focus-visible{outline:2px solid #328aa2;outline-offset:5px}
+@media(max-width:760px){
+ #main.is-about>.community-container{padding-top:55px;padding-bottom:44px}
+ .about-cover{height:270px;background-position:60% 55%}
+ .about-content{margin-top:-44px;padding:0 16px}
+ .about-card{padding:24px;gap:18px;grid-template-columns:minmax(0,1fr)}
+ .about-card .about-identity{flex-wrap:nowrap;gap:14px}
+ .about-card .user-avatar{width:48px;height:48px;font-size:21px}
+ .about-card .about-edit{grid-row:4;justify-self:start}
+ .about-card .about-links{gap:20px}
+ .about-card .about-bio{font-size:14px}
+ .about-collections{padding:0 4px}
+ .about-collections .showcase-group{margin-top:30px}
+ .about-collections .about-post{padding:22px;min-height:150px}
+}
