@@ -92,7 +92,7 @@
   }
   async function saveProfile(data){return C.request('/rest/v1/blog_profiles?user_id=eq.'+encode(C.currentUser().id),{method:'PATCH',auth:true,body:data,headers:{Prefer:'return=representation'}});}
   async function comment(data){return C.request('/rest/v1/blog_comments',{method:'POST',auth:true,body:data,headers:{Prefer:'return=representation'}});}
-  window.CommunityAPI={rpc,profile,ownProfile,initializeSpace,moments,post,feed,forum,publicLibrary:owner=>C.request('/rest/v1/blog_posts?select=id,title,summary,collection&owner_id=eq.'+encode(owner)+'&published=eq.true&order=created_at.desc,id.desc&limit=100'),interactions:ids=>rpc('blog_post_interactions',{post_ids:ids}),react:(id,value)=>rpc('blog_react',{target:id,reaction:value},true),folders,titles,commentPage,comment,compressImage,upload,removeImage,saveProfile,
+  window.CommunityAPI={rpc,profile,ownProfile,initializeSpace,moments,post,feed,forum,publicLibrary:owner=>C.request('/rest/v1/blog_posts?select=id,title,summary,collection,metadata&owner_id=eq.'+encode(owner)+'&published=eq.true&order=created_at.desc,id.desc&limit=100'),interactions:ids=>rpc('blog_post_interactions',{post_ids:ids}),react:(id,value)=>rpc('blog_react',{target:id,reaction:value},true),folders,titles,commentPage,comment,compressImage,upload,removeImage,saveProfile,
     usage:async()=>{try{await rpc('blog_settle_images',{},true);}catch{}return rpc('blog_usage',{},true);},
     media:()=>C.request('/rest/v1/blog_media?select=*&order=created_at.desc&limit=1000',{auth:true})};
 })();

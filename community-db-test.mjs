@@ -116,4 +116,14 @@ await fail("update blog_profiles set featured_posts=array['page-00','page-00'] w
 await fail("update blog_profiles set featured_posts=array['a-draft'] where user_id=$1",[B]);await fail("update blog_profiles set featured_posts=array['b-draft'] where user_id=$1",[B]);
 await role('authenticated',A);assert.equal((await db.query("update blog_profiles set featured_posts='{}' where user_id=$1 returning user_id",[B])).rows.length,0);
 await role('anon');await fail("update blog_profiles set featured_posts='{}' where user_id=$1",[B]);
+await db.exec('reset role');const showcase=await readFile('supabase/showcase-collections.sql','utf8');await db.exec(showcase);await db.exec(showcase);
+await role('authenticated',B);
+assert.equal((await db.query('select showcase_collections from blog_profiles where user_id=$1',[B])).rows[0].showcase_collections[0].posts.length,2);
+const saveGroups=async(groups)=>db.query('update blog_profiles set showcase_collections=$1::jsonb where user_id=$2',[JSON.stringify(groups),B]);
+await saveGroups([{id:'one',name:'作品集',posts:['page-00']},{id:'two',name:'技术',posts:['page-00','page-01']}]);
+for(const groups of [[{id:'one',name:'',posts:[]}],[{id:'one',name:'Bad',posts:['b-draft']}],[{id:'one',name:'Bad',posts:['a-draft']}],[{id:'one',name:'Bad',posts:['page-00','page-00']}],[{id:'one',name:'Bad',posts:[1]}]])await fail('update blog_profiles set showcase_collections=$1::jsonb where user_id=$2',[JSON.stringify(groups),B]);
+await saveGroups([]);assert.equal((await db.query("select id from blog_posts where id in ('page-00','page-01')")).rows.length,2);
+await db.exec('reset role');await db.exec(showcase);assert.deepEqual((await db.query('select showcase_collections from blog_profiles where user_id=$1',[B])).rows[0].showcase_collections,[]);
+await role('authenticated',A);assert.equal((await db.query("update blog_profiles set showcase_collections='[]' where user_id=$1 returning user_id",[B])).rows.length,0);
+await role('anon');await fail("update blog_profiles set showcase_collections='[]' where user_id=$1",[B]);
 await db.close();console.log('PASS: repeatable legacy migration, two-user isolation, anonymous/unverified denial, ownership FKs, comments/replies/moderation, drafts, private images, byte quotas, server search and disjoint pagination.');
