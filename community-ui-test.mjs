@@ -38,7 +38,7 @@ const C={currentUser:()=>current,login:async(email)=>{current=users[email.split(
 };
 w.BlogCloud=C;
 for(const file of ['vendor/marked.umd.js','vendor/purify.min.js','markdown.js','community-api.js','community-auth.js','community-app.js'])w.eval(await readFile(file,'utf8'));
-const settle=()=>new Promise(r=>setTimeout(r,30));
+const settle=async()=>{await new Promise(r=>setTimeout(r,30));const confirmation=d.querySelector('.delete-confirm[open]');if(confirmation){confirmation.querySelector('[data-confirm-delete]').click();await new Promise(r=>setTimeout(r,30));}};
 async function go(hash){w.location.hash=hash;await settle();}
 const submit=form=>form.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));
 async function snapshot(name){if(!process.env.COMMUNITY_SNAPSHOT)return;const copy=d.documentElement.cloneNode(true);copy.querySelectorAll('script,.inline-message').forEach(el=>el.remove());await writeFile('.test-runtime/polish-'+name+'.html','<!doctype html>'+copy.outerHTML.replaceAll('href="./','href="../'));}
@@ -60,6 +60,7 @@ form.elements.title.value='Own new post';form.elements.body.value='Own new body'
 await go('#/u/alice');
 const context=el=>el.dispatchEvent(new w.MouseEvent('contextmenu',{bubbles:true,cancelable:true,clientX:100,clientY:180}));
 const choose=text=>[...d.querySelectorAll('.tree-context-menu button')].find(b=>b.textContent===text).click();
+context(d.querySelector('[data-post-menu="a-post"]'));choose('删除');assert.ok(d.querySelector('.delete-confirm[open]'));assert.equal(d.activeElement,d.querySelector('.delete-confirm [data-cancel]'));d.querySelector('.delete-confirm [data-cancel]').click();await settle();assert.ok(posts.find(p=>p.id==='a-post'));assert.equal(d.querySelector('.delete-confirm'),null);
 context(d.querySelector('[data-post-menu="a-post"]'));choose('重命名');
 let rename=d.querySelector('.tree-rename');rename.value='Renamed file';rename.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Enter',bubbles:true}));await settle();assert.equal(posts.find(p=>p.id==='a-post').title,'Renamed file');assert.match(posts.find(p=>p.id==='a-post').body,/Alice body/);
 context(d.querySelector('[data-folder-menu="a-folder"]'));choose('重命名');rename=d.querySelector('.tree-rename');rename.value='Renamed folder';rename.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Enter',bubbles:true}));await settle();assert.equal(folders.find(f=>f.id==='a-folder').name,'Renamed folder');

@@ -23,6 +23,13 @@
   function show(title,html,sidebar=''){main.classList.remove('is-writing','is-reading','is-documents');document.body.classList.remove('is-home');document.title=title+' · CAI';main.innerHTML=`<div class="container community-container">${sidebar?`<div class="community-layout"><aside class="community-sidebar"><button class="sidebar-toggle" type="button" aria-expanded="false" aria-controls="sidebar-content">目录与作者</button><div id="sidebar-content" class="sidebar-content">${sidebar}</div></aside><div class="file-pane">${html}</div></div>`:html}</div>`;const toggle=main.querySelector('.sidebar-toggle');if(toggle)toggle.onclick=()=>{const open=toggle.getAttribute('aria-expanded')!=='true';toggle.setAttribute('aria-expanded',String(open));toggle.closest('aside').classList.toggle('expanded',open);};}
   function errorPage(error){show('无法加载',`<section class="empty"><h1>暂时无法加载</h1><p>${E(error.message||'请稍后重试')}</p><button data-retry>重新加载</button></section>`);main.querySelector('[data-retry]').onclick=render;}
   function toast(text,error=false){Auth.notice(text,error);}
+  function confirmDelete(message){return new Promise(resolve=>{
+    const dialog=document.createElement('dialog');dialog.className='inline-dialog delete-confirm';dialog.setAttribute('aria-labelledby','delete-confirm-title');dialog.setAttribute('aria-describedby','delete-confirm-message');
+    dialog.innerHTML=`<h2 id="delete-confirm-title">确认删除</h2><p id="delete-confirm-message">${E(message)}</p><div class="dialog-actions"><button type="button" data-cancel autofocus>取消</button><button type="button" data-confirm-delete>删除</button></div>`;
+    let settled=false;const finish=value=>{if(settled)return;settled=true;dialog.close();dialog.remove();resolve(value);};
+    dialog.querySelector('[data-cancel]').onclick=()=>finish(false);dialog.querySelector('[data-confirm-delete]').onclick=()=>finish(true);dialog.oncancel=e=>{e.preventDefault();finish(false);};dialog.onclose=()=>finish(false);
+    document.body.append(dialog);dialog.showModal();dialog.querySelector('[data-cancel]').focus();
+  });}
   function popup(html){modal.innerHTML=html+'<p class="dialog-error" role="alert"></p>';if(!modal.open)modal.showModal();modal.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>modal.close());}
   async function job(action,scope=main){if(working)return;working=true;const controls=[...scope.querySelectorAll('button,input,textarea,select')].map(el=>[el,el.disabled]);controls.forEach(([el])=>el.disabled=true);scope.setAttribute('aria-busy','true');try{return await action();}catch(e){if(modal.open)modal.querySelector('.dialog-error').textContent=e.message;else toast(e.name==='TimeoutError'?'请求超时，内容仍保留，请重试。':e.message,true);}finally{working=false;scope.removeAttribute('aria-busy');controls.forEach(([el,disabled])=>{if(el.isConnected)el.disabled=disabled;});}}
   function requireLogin(next){if(!who()){Auth.open(next);return false;}return true;}
@@ -111,7 +118,7 @@
         ['编辑',()=>{location.hash='#/edit/'+enc(p.id);}],
         ['重命名',()=>renameTreeItem(row.querySelector('a'),p,false)],
         ['移动',()=>job(async()=>{const latest=await A.post(p.id);movePost(latest,folders.filter(f=>f.collection===latest.collection));},main)],
-        ['删除',()=>{if(!confirm('永久删除“'+p.title+'”及其评论？'))return;job(async()=>{const latest=await A.post(p.id);await A.rpc('blog_file_operation',{action:'delete_post',target_id:p.id,expected_version:latest.version},true);location.hash=spaceURL(profile,p.folder_id?{folder:p.folder_id}:{});await render();},main);},'danger']
+        ['删除',async()=>{if(!await confirmDelete('永久删除“'+p.title+'”及其评论？'))return;job(async()=>{const latest=await A.post(p.id);await A.rpc('blog_file_operation',{action:'delete_post',target_id:p.id,expected_version:latest.version},true);location.hash=spaceURL(profile,p.folder_id?{folder:p.folder_id}:{});await render();},main);},'danger']
       ];
       return [['新建文件',()=>writeNew(collection,parent)],['新建文件夹',()=>folderCreate(collection,parent)],...(f?[
         ['重命名',()=>renameTreeItem(summary.querySelector('a'),f,true)],
@@ -174,7 +181,7 @@
     main.querySelectorAll('.article-body img').forEach(img=>img.onclick=()=>{if(!img.src)return;const viewer=document.createElement('dialog');viewer.className='image-viewer';const copy=img.cloneNode();copy.removeAttribute('loading');const close=document.createElement('button');close.textContent='关闭';close.onclick=()=>viewer.close();viewer.append(copy,close);document.body.append(viewer);viewer.addEventListener('close',()=>viewer.remove());viewer.showModal();});
     main.querySelector('[data-edit]')?.addEventListener('click',()=>{location.hash='#/edit/'+enc(id);});
     main.querySelector('[data-move]')?.addEventListener('click',()=>movePost(p,folders.filter(f=>f.collection===p.collection)));
-    main.querySelector('[data-delete]')?.addEventListener('click',()=>{if(confirm('永久删除这篇帖子及其评论？'))job(async()=>{await A.rpc('blog_file_operation',{action:'delete_post',target_id:p.id,expected_version:p.version},true);location.hash=spaceURL(p.author);toast('帖子已删除。');});});
+    main.querySelector('[data-delete]')?.addEventListener('click',async()=>{if(await confirmDelete('永久删除这篇帖子及其评论？'))job(async()=>{await A.rpc('blog_file_operation',{action:'delete_post',target_id:p.id,expected_version:p.version},true);location.hash=spaceURL(p.author);toast('帖子已删除。');});});
     if(p.published)await comments({postId:p.id,ownerId:p.owner_id},main.querySelector('#comments'),ticket);
     else main.querySelector('#comments').innerHTML='<p>草稿发布后开放评论。</p>';
   }
@@ -187,7 +194,7 @@
     root.querySelectorAll('[data-reply]').forEach(b=>b.onclick=()=>{reply=b.dataset.reply;const original=data.items.find(c=>c.id===reply);form.querySelector('#reply-to').hidden=false;form.querySelector('#reply-to').textContent='回复 '+displayName(original.author)+'：'+original.body.slice(0,80);form.querySelector('[data-cancel-reply]').hidden=false;form.elements.body.focus();});
     form?.querySelector('[data-cancel-reply]').addEventListener('click',()=>{reply=null;form.querySelector('#reply-to').hidden=true;form.querySelector('[data-cancel-reply]').hidden=true;});
     if(form)form.onsubmit=e=>{e.preventDefault();const body=form.elements.body.value.trim();if(!body)return;job(async()=>{await A.comment({body,post_id:ctx.postId||null,space_id:ctx.spaceId||null,parent_id:reply});form.elements.body.value='';reply=null;toast('已发表。');await comments(ctx,root,ticket,1);},root);};
-    root.querySelectorAll('[data-delete-comment]').forEach(b=>b.onclick=()=>{if(confirm('删除这条评论？'))job(async()=>{await A.rpc('blog_delete_comment',{target:b.dataset.deleteComment},true);await comments(ctx,root,ticket,page);},root);});
+    root.querySelectorAll('[data-delete-comment]').forEach(b=>b.onclick=async()=>{if(await confirmDelete('删除这条评论？'))job(async()=>{await A.rpc('blog_delete_comment',{target:b.dataset.deleteComment},true);await comments(ctx,root,ticket,page);},root);});
     root.querySelector('[data-comments-prev]')?.addEventListener('click',()=>comments(ctx,root,ticket,page-1).catch(e=>toast(e.message,true)));
     root.querySelector('[data-comments-next]')?.addEventListener('click',()=>comments(ctx,root,ticket,page+1).catch(e=>toast(e.message,true)));
   }
@@ -204,7 +211,7 @@
       const latest=await A.folders(who()),root=latest.find(f=>f.id===folder.id);if(!root)throw Error('文件夹已不存在，请刷新。');
       const ids=new Set([root.id]),ordered=[root];for(let i=0;i<ordered.length;i++)for(const f of latest)if(f.parent_id===ordered[i].id&&!ids.has(f.id)){ids.add(f.id);ordered.push(f);}
       const posts=(await A.titles(who())).filter(p=>ids.has(p.folder_id));
-      if(!confirm('永久删除“'+root.name+'”及其中 '+posts.length+' 篇帖子、'+(ordered.length-1)+' 个子文件夹？此操作不能撤销。'))return;
+      if(!await confirmDelete('永久删除“'+root.name+'”及其中 '+posts.length+' 篇帖子、'+(ordered.length-1)+' 个子文件夹？此操作不能撤销。'))return;
       let removed=0;try{
         for(const title of posts){const p=await A.post(title.id);if(!p)continue;if(!ids.has(p.folder_id))throw Error('帖子已被移动，请刷新后重试。');await A.rpc('blog_file_operation',{action:'delete_post',target_id:p.id,expected_version:p.version},true);removed++;}
         for(const f of ordered.reverse()){await A.rpc('blog_file_operation',{action:'delete_folder',target_id:f.id,expected_version:f.version},true);removed++;}
@@ -254,8 +261,8 @@
     C.hydrateImages(main,true);
     main.querySelector('#profile-form').onsubmit=e=>{e.preventDefault();const f=e.currentTarget;job(async()=>{const name=f.elements.display_name.value.trim();if(name.length<2||name.length>30)throw Error('昵称需要 2–30 个字符。');await A.saveProfile({display_name:name,bio:f.elements.bio.value.trim(),website:f.elements.website.value.trim()});mine=await A.ownProfile();refreshAccount();await render();toast('个人资料已更新。');},f);};
     main.querySelectorAll('[data-restore]').forEach(b=>b.onclick=()=>job(async()=>{let p=drafts.find(d=>d.post.id===b.dataset.restore).post;const current=p.version?await A.post(p.id):null;if(p.version&&(!current||current.version!==p.version)){p={...p,id:crypto.randomUUID(),version:undefined,published:false};toast('云端版本已变化，备份将恢复为新帖子。');}history.replaceState(null,'','#/write?board='+enc(p.collection));lastHash=location.hash;await editor(null,new URLSearchParams(),++epoch,p);}));
-    main.querySelectorAll('[data-drop-backup]').forEach(b=>b.onclick=()=>{if(confirm('删除这份设备备份？')){removeBackup(b.dataset.dropBackup);render();}});
-    main.querySelectorAll('[data-remove-image]').forEach(b=>b.onclick=()=>{if(confirm('删除这张未被帖子引用的图片？'))job(async()=>{await A.removeImage(b.dataset.removeImage);await render();toast('图片占用已清理。');});});
+    main.querySelectorAll('[data-drop-backup]').forEach(b=>b.onclick=async()=>{if(await confirmDelete('删除这份设备备份？')){removeBackup(b.dataset.dropBackup);render();}});
+    main.querySelectorAll('[data-remove-image]').forEach(b=>b.onclick=async()=>{if(await confirmDelete('删除这张未被帖子引用的图片？'))job(async()=>{await A.removeImage(b.dataset.removeImage);await render();toast('图片占用已清理。');});});
   }
   async function render(){
     const ticket=++epoch;main.setAttribute('aria-busy','true');const {parts:[page,id],query}=route();
