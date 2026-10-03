@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="680" viewBox="0 0 1120 680" role="img">
+<title>请求到了机器，还没有到 Gin</title>
+<rect width="1120" height="680" fill="#fffefa"/>
+<text x="40" y="54.239999999999995" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="34" fill="#34404a">请求到了机器，还没有到 Gin</text>
+<text x="42" y="96.92" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="22" fill="#65717a">以远端客户端 → Linux → 明文 HTTP/1.1 为例</text>
+<polyline points="41.4,115.4 519.3,115.1" fill="none" stroke="#326ea1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="45" y="176.5" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="25" fill="#b66a3d">机器 / 内核</text>
+<text x="650" y="176.5" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="25" fill="#326ea1">Go 进程 / 用户态</text>
+<polyline points="595.1,148.2 595.0,589.7" fill="none" stroke="#65717a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="7 7"/>
+<polygon points="55,218 275.0,217 495,219 496,290 231.0,289 54,290 55,218" fill="#f6eee4"/>
+<polyline points="56.1,219.0 274.8,216.3 495.6,219.9 497.1,291.2 230.4,289.1 53.9,291.1 56.1,218.9" fill="none" stroke="#34404a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="72" y="261.0" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="25" fill="#34404a">网卡 / 驱动：接收网络数据</text>
+<polygon points="55,330 275.0,329 495,331 496,420 231.0,419 54,420 55,330" fill="#f6eee4"/>
+<polyline points="55.5,329.8 274.6,328.7 494.4,329.9 495.6,419.7 231.2,418.8 54.6,420.5 54.2,329.2" fill="none" stroke="#34404a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="72" y="381.28" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="23" fill="#34404a">IP / TCP：定位连接、排序数据</text>
+<polygon points="55,465 275.0,464 495,466 496,550 231.0,549 54,550 55,465" fill="#f6eee4"/>
+<polyline points="54.2,464.5 275.1,464.1 496.1,466.0 496.6,550.7 232.0,549.3 53.6,550.8 53.9,465.6" fill="none" stroke="#34404a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="72" y="514.14" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="24" fill="#34404a">已连接 socket 的接收缓冲</text>
+<polyline points="280.4,290.0 282.0,306.3 279.7,325.9" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="274.3,313.0 278.8,326.6 286.6,314.4" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="280.9,419.5 282.1,438.9 280.3,461.1" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="274.5,448.8 281.2,461.0 288.0,451.0" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polygon points="660,465 865.0,464 1070,466 1071,550 824.0,549 659,550 660,465" fill="#eef4fa"/>
+<polyline points="660.1,466.2 865.9,464.7 1070.9,466.5 1070.8,550.4 823.6,549.3 659.9,550.2 659.3,465.0" fill="none" stroke="#34404a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="677" y="514.5" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="25" fill="#34404a">net.Conn.Read → 用户态字节</text>
+<polygon points="660,330 865.0,329 1070,331 1071,420 824.0,419 659,420 660,330" fill="#eef4fa"/>
+<polyline points="660.6,330.8 866.1,329.6 1070.7,330.8 1072.0,420.1 823.3,419.0 659.5,419.3 660.0,328.9" fill="none" stroke="#34404a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="677" y="382.0" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="25" fill="#34404a">net/http：解析请求行与头部</text>
+<polygon points="660,218 865.0,217 1070,219 1071,290 824.0,289 659,290 660,218" fill="#eef4fa"/>
+<polyline points="660.1,218.3 866.0,218.1 1071.2,218.7 1070.1,290.8 823.4,288.1 658.6,289.6 659.4,217.4" fill="none" stroke="#34404a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="677" y="261.0" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="25" fill="#34404a">Gin：路由 → 处理函数</text>
+<polyline points="499.8,507.2 579.7,503.6 655.9,504.9" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="643.6,509.6 655.4,505.0 643.3,499.6" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="514" y="474.06" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="21" fill="#34404a">read</text>
+<polyline points="866.5,461.0 868.7,440.5 866.6,424.2" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="874.5,434.3 867.1,424.8 863.5,437.3" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="867.7,327.7 867.9,308.5 866.6,293.2" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="872.4,305.5 866.0,292.5 862.8,306.3" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="42" y="652.2" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="20" fill="#65717a">边界要分清：内核不按 /users 路由；请求体可以在 handler 中继续读取。</text>
+</svg>

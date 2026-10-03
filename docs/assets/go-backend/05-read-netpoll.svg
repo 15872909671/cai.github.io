@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="680" viewBox="0 0 1120 680" role="img">
+<title>Go 把“等待”藏在了 Read 里面</title>
+<rect width="1120" height="680" fill="#fffefa"/>
+<text x="40" y="54.239999999999995" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="34" fill="#34404a">Go 把“等待”藏在了 Read 里面</text>
+<text x="42" y="96.92" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="22" fill="#65717a">正常的可轮询 TCP socket；省略锁、错误处理与 deadline 分支</text>
+<polyline points="43.2,115.7 519.7,116.6" fill="none" stroke="#326ea1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<polygon points="40,173 175.0,172 310,174 311,253 148.0,252 39,253 40,173" fill="#eef4fa"/>
+<polyline points="38.9,174.2 176.2,172.9 309.8,175.0 310.7,252.9 148.7,251.0 37.9,253.6 39.3,171.9" fill="none" stroke="#34404a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="57" y="220.0" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="25" fill="#34404a">1. 非阻塞 read</text>
+<polygon points="425,173 555.0,172 685,174 686,253 529.0,252 424,253 425,173" fill="#f6eee4"/>
+<polyline points="425.2,173.5 555.3,171.8 685.9,175.2 686.8,253.9 529.6,253.0 424.4,254.1 424.0,172.2" fill="none" stroke="#34404a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="442" y="220.0" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="25" fill="#34404a">2. 返回 EAGAIN</text>
+<polygon points="805,173 942.5,172 1080,174 1081,253 915.0,252 804,253 805,173" fill="#f6eee4"/>
+<polyline points="805.4,174.1 942.5,170.9 1080.0,174.4 1082.1,253.6 915.6,253.0 803.7,252.0 804.2,173.3" fill="none" stroke="#34404a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="822" y="220.0" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="25" fill="#34404a">3. G 等待 I/O</text>
+<polyline points="314.3,213.0 366.5,212.0 415.2,214.2" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="404.0,218.8 414.6,213.3 404.8,208.7" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="689.2,213.6 743.5,210.6 793.9,213.8" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="782.7,218.3 793.8,213.1 781.7,208.4" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polygon points="805,405 942.5,404 1080,406 1081,495 915.0,494 804,495 805,405" fill="#eef4fa"/>
+<polyline points="805.5,404.1 943.6,404.6 1079.2,406.8 1081.7,496.0 914.3,494.4 804.4,495.7 805.7,405.5" fill="none" stroke="#34404a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="822" y="438.64" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="24" fill="#34404a">4. epoll 报告</text>
+<text x="822" y="474.64" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="24" fill="#34404a">fd 可读</text>
+<polygon points="425,405 555.0,404 685,406 686,495 529.0,494 424,495 425,405" fill="#eef4fa"/>
+<polyline points="426.0,405.5 555.1,404.9 685.2,405.4 686.6,495.9 528.0,494.7 424.4,494.8 426.1,405.3" fill="none" stroke="#34404a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="442" y="456.28" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="23" fill="#34404a">5. G 变为可运行</text>
+<polygon points="40,405 175.0,404 310,406 311,495 148.0,494 39,495 40,405" fill="#eef4fa"/>
+<polyline points="39.5,405.0 174.6,404.2 310.4,405.2 310.9,494.0 149.1,495.0 40.0,495.4 40.9,405.8" fill="none" stroke="#34404a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="57" y="438.64" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="24" fill="#34404a">6. 获调度后</text>
+<text x="57" y="474.64" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="24" fill="#34404a">再次 read</text>
+<polyline points="942.4,262.1 943.6,325.7 941.8,394.7" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="937.6,382.4 942.6,394.0 948.6,382.0" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="796.1,449.2 748.5,448.1 694.9,449.2" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="705.7,442.4 695.9,448.2 706.4,454.8" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="415.0,448.5 370.7,448.0 319.7,449.4" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="331.2,443.9 320.2,450.1 332.7,454.9" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="174.7,402.2 175.3,327.0 46.8,325.1 47.0,266.9" fill="none" stroke="#326ea1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="52.1,277.5 47.6,266.1 41.1,278.5" fill="none" stroke="#326ea1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="330" y="349.78" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="23" fill="#326ea1">有数据 → 拷贝到调用者的 buf → 返回</text>
+<text x="42" y="652.2" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="20" fill="#65717a">epoll 返回就绪事件，不替应用读取正文；再次 read 仍可能需要继续等待。</text>
+</svg>

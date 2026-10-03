@@ -1,4 +1,4 @@
-import {readFile,writeFile,mkdir,copyFile} from 'node:fs/promises';
+import {readFile,writeFile,mkdir,copyFile,cp} from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 const root=path.dirname(fileURLToPath(import.meta.url));
@@ -46,3 +46,6 @@ for(const file of ['marked.umd.js','purify.min.js','marked.LICENSE','dompurify.L
 await writeFile(path.join(root,'.nojekyll'),'');
 await writeFile(path.join(root,'docs/.nojekyll'),'');
 console.log('Built '+records.length+' records; root and docs are ready for GitHub Pages.');
+
+// Keep the published article diagrams available in both Pages source layouts.
+await cp(path.join(root,'assets/go-backend'),path.join(root,'docs/assets/go-backend'),{recursive:true});

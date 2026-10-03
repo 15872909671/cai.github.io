@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="680" viewBox="0 0 1120 680" role="img">
+<title>“刚准备睡，数据就来了”怎么办？</title>
+<rect width="1120" height="680" fill="#fffefa"/>
+<text x="40" y="54.239999999999995" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="34" fill="#34404a">“刚准备睡，数据就来了”怎么办？</text>
+<text x="42" y="96.92" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="22" fill="#65717a">示意 ready 状态如何避免丢通知，不是完整原子操作时序</text>
+<polyline points="42.2,114.5 520.4,115.2" fill="none" stroke="#326ea1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="55" y="184.07999999999998" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="28" fill="#326ea1">读 goroutine</text>
+<text x="715" y="184.07999999999998" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="28" fill="#b66a3d">轮询 / 就绪通知</text>
+<polyline points="278.9,214.4 279.9,564.6" fill="none" stroke="#65717a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="7 7"/>
+<polyline points="884.6,215.2 884.7,564.9" fill="none" stroke="#65717a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="7 7"/>
+<polygon points="55,225 280.0,224 505,226 506,301 235.0,300 54,301 55,225" fill="#eef4fa"/>
+<polyline points="55.5,226.1 280.9,223.1 505.1,224.8 506.6,300.9 234.2,300.5 54.4,300.2 55.9,225.1" fill="none" stroke="#34404a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="72" y="270.0" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="25" fill="#34404a">read 返回 EAGAIN</text>
+<polygon points="660,340 865.0,339 1070,341 1071,430 824.0,429 659,430 660,340" fill="#f6eee4"/>
+<polyline points="660.0,340.9 864.9,338.8 1071.0,340.1 1071.3,429.0 823.0,429.3 658.7,430.0 661.0,338.9" fill="none" stroke="#34404a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="677" y="373.5" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="25" fill="#34404a">数据可读</text>
+<text x="677" y="410.5" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="25" fill="#34404a">记录 ready 状态</text>
+<polyline points="874.5,329.7 876.4,329.7 875.4,335.5" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="871.7,322.6 875.2,334.5 883.8,324.9" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="654.4,389.5 545.3,390.0 509.7,482.1" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="509.7,468.4 510.2,481.4 518.7,472.1" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polygon points="55,453 280.0,452 505,454 506,554 235.0,553 54,554 55,453" fill="#eef4fa"/>
+<polyline points="55.5,452.5 280.3,451.8 505.9,453.7 506.4,554.6 234.3,553.4 52.9,554.4 54.7,454.0" fill="none" stroke="#34404a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="72" y="491.86" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="26" fill="#34404a">准备等待时检查状态</text>
+<text x="72" y="529.86" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="26" fill="#34404a">发现 ready → 不必睡下</text>
+<text x="590" y="536.64" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="24" fill="#326ea1">若已睡下，则唤醒 G。</text>
+<text x="42" y="652.2" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="20" fill="#65717a">关键不是“收到事件就好”，而是通知与入睡之间要有同步协议。</text>
+</svg>

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="680" viewBox="0 0 1120 680" role="img">
+<title>TCP 给字节流，HTTP 自己找边界</title>
+<rect width="1120" height="680" fill="#fffefa"/>
+<text x="40" y="54.239999999999995" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="34" fill="#34404a">TCP 给字节流，HTTP 自己找边界</text>
+<text x="42" y="96.92" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="22" fill="#65717a">下图两次 Read 只是可能的切分，不等同于两个网络包</text>
+<polyline points="41.9,115.1 520.2,115.2" fill="none" stroke="#326ea1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<polygon points="50,165 560.0,164 1070,166 1071,240 458.0,239 49,240 50,165" fill="#f6eee4"/>
+<polyline points="50.1,164.4 560.8,163.4 1069.6,166.3 1070.5,239.6 459.0,240.0 49.2,241.1 49.1,165.9" fill="none" stroke="#34404a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="67" y="210.22" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="27" fill="#34404a">GET /ping HTTP/1.1\r\nHost: localhost\r\n\r\n</text>
+<text x="52" y="285.64" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="24" fill="#34404a">应用可能这样读到：</text>
+<polygon points="50,320 210.0,319 370,321 371,403 178.0,402 49,403 50,320" fill="#eef4fa"/>
+<polyline points="49.0,319.0 210.5,318.5 370.4,320.4 370.6,402.4 176.9,402.0 49.0,404.0 50.8,318.8" fill="none" stroke="#34404a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="67" y="368.5" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="25" fill="#34404a">第 1 次：GET /pi</text>
+<polygon points="420,320 745.0,319 1070,321 1071,403 680.0,402 419,403 420,320" fill="#eef4fa"/>
+<polyline points="419.0,320.5 745.9,318.9 1069.8,322.0 1072.1,402.1 680.7,402.7 418.4,403.4 420.2,320.5" fill="none" stroke="#34404a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="437" y="367.78" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="23" fill="#34404a">第 2 次：ng HTTP/1.1 ... \r\n\r\n</text>
+<polyline points="209.7,409.2 285.9,449.6 360.9,494.2" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="348.1,494.0 360.3,495.2 352.8,482.8" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="754.2,410.2 757.9,449.0 754.2,490.5" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="750.3,478.9 754.3,491.6 760.5,479.7" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polygon points="300,505 640.0,504 980,506 981,583 572.0,582 299,583 300,505" fill="#eef4fa"/>
+<polyline points="298.8,505.3 639.1,504.0 980.4,507.2 980.6,583.6 572.7,581.8 298.1,583.9 299.2,505.7" fill="none" stroke="#34404a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="317" y="551.36" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="26" fill="#34404a">缓冲 + HTTP 解析器 → Request 对象</text>
+<text x="42" y="652.2" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="20" fill="#65717a">还可能一次读到多个请求的字节；读完头部，也不等于读完请求体。</text>
+</svg>

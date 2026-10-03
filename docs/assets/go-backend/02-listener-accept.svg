@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="680" viewBox="0 0 1120 680" role="img">
+<title>监听 socket 与连接 socket，是两种角色</title>
+<rect width="1120" height="680" fill="#fffefa"/>
+<text x="40" y="54.239999999999995" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="34" fill="#34404a">监听 socket 与连接 socket，是两种角色</text>
+<text x="42" y="96.92" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="22" fill="#65717a">fd 是进程里的句柄；图中数字只是示意</text>
+<polyline points="42.6,115.1 519.1,116.5" fill="none" stroke="#326ea1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<polygon points="55,185 265.0,184 475,186 476,275 223.0,274 54,275 55,185" fill="#f6eee4"/>
+<polyline points="54.4,185.9 264.8,183.3 474.3,185.6 475.1,276.1 221.9,275.1 53.2,274.6 56.1,184.0" fill="none" stroke="#34404a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="72" y="237.0" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="25" fill="#34404a">监听 fd 3：0.0.0.0:8080</text>
+<polygon points="55,345 265.0,344 475,346 476,440 223.0,439 54,440 55,345" fill="#f6eee4"/>
+<polyline points="55.3,346.2 265.6,344.1 476.0,346.2 475.9,440.3 223.4,438.5 53.5,439.7 54.1,345.4" fill="none" stroke="#34404a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="72" y="381.0" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="25" fill="#34404a">已完成握手的连接</text>
+<text x="72" y="418.0" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="25" fill="#34404a">等待应用 Accept</text>
+<polyline points="260.4,280.9 262.4,307.0 259.2,339.3" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="254.2,328.1 258.6,340.3 265.4,327.4" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polygon points="665,175 862.5,174 1060,176 1061,260 823.0,259 664,260 665,175" fill="#eef4fa"/>
+<polyline points="665.9,175.2 861.6,174.9 1060.1,175.5 1061.9,259.6 824.0,258.1 664.7,260.5 664.8,174.2" fill="none" stroke="#34404a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="682" y="224.5" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="25" fill="#34404a">fd 7：客户端 A 的连接</text>
+<polygon points="665,340 862.5,339 1060,341 1061,425 823.0,424 664,425 665,340" fill="#eef4fa"/>
+<polyline points="665.6,339.7 862.3,338.5 1059.8,341.0 1061.5,423.8 822.9,424.7 664.8,425.7 665.7,340.7" fill="none" stroke="#34404a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="682" y="389.5" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="25" fill="#34404a">fd 8：客户端 B 的连接</text>
+<polygon points="665,505 862.5,504 1060,506 1061,590 823.0,589 664,590 665,505" fill="#eef4fa"/>
+<polyline points="665.8,506.0 861.8,503.9 1061.0,505.2 1061.1,591.0 823.1,589.1 664.4,590.4 665.1,506.0" fill="none" stroke="#34404a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="682" y="554.5" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="25" fill="#34404a">fd 9：客户端 C 的连接</text>
+<polyline points="481.8,388.9 570.5,304.0 652.1,219.9" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="648.4,231.2 651.0,220.5 640.0,223.6" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="481.6,389.1 569.0,385.7 652.9,385.4" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="641.9,392.3 653.8,384.9 640.8,379.5" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="482.6,389.4 570.2,465.6 653.3,545.1" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="640.4,541.0 652.4,544.1 648.2,533.3" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="496" y="309.78" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="23" fill="#326ea1">Accept</text>
+<text x="60" y="523.22" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="27" fill="#34404a">监听 fd 留着继续接客。</text>
+<text x="60" y="562.22" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="27" fill="#34404a">读 HTTP 数据用的是新 fd。</text>
+<text x="42" y="652.2" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="20" fill="#65717a">Accept 接走连接，不负责代替内核完成普通 TCP 三次握手。</text>
+</svg>

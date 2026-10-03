@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="680" viewBox="0 0 1120 680" role="img">
+<title>Read 没返回，不等于线程一直陪它等</title>
+<rect width="1120" height="680" fill="#fffefa"/>
+<text x="40" y="54.239999999999995" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="34" fill="#34404a">Read 没返回，不等于线程一直陪它等</text>
+<text x="42" y="96.92" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="22" fill="#65717a">这里只画一个线程上的一段执行过程；不表示只有一个线程</text>
+<polyline points="40.9,115.6 520.4,115.5" fill="none" stroke="#326ea1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="45" y="183.22" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="27" fill="#326ea1">线程 M</text>
+<polyline points="169.2,177.2 1060.8,178.1" fill="none" stroke="#34404a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="1048.3,183.8 1059.7,178.1 1049.3,172.8" fill="none" stroke="#34404a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<polygon points="190,216 305.0,215 420,217 421,302 282.0,301 189,302 190,216" fill="#eef4fa"/>
+<polyline points="190.5,216.4 305.5,214.6 419.6,216.4 421.9,302.9 281.3,301.2 189.7,302.9 190.9,216.8" fill="none" stroke="#34404a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="207" y="247.5" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="25" fill="#34404a">运行 G1</text>
+<text x="207" y="284.5" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="25" fill="#34404a">调用 Read</text>
+<polygon points="490,216 615.0,215 740,217 741,302 590.0,301 489,302 490,216" fill="#eef4fa"/>
+<polyline points="491.2,216.8 615.7,214.8 738.9,217.1 741.6,301.8 591.2,301.3 489.9,300.8 489.2,215.9" fill="none" stroke="#34404a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="507" y="247.78" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="23" fill="#34404a">运行其他 G</text>
+<text x="507" y="282.78" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="23" fill="#34404a">处理另一项工作</text>
+<polygon points="810,216 940.0,215 1070,217 1071,302 914.0,301 809,302 810,216" fill="#eef4fa"/>
+<polyline points="810.3,217.0 940.8,214.3 1069.9,216.2 1071.9,302.8 913.9,302.1 809.9,302.3 809.2,216.0" fill="none" stroke="#34404a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="827" y="247.78" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="23" fill="#34404a">G1 再次获调度</text>
+<text x="827" y="282.78" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="23" fill="#34404a">重试 Read</text>
+<polyline points="425.2,258.2 455.0,255.2 483.8,256.8" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="471.5,262.1 484.8,255.9 472.3,250.3" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="744.8,258.7 776.5,256.1 805.8,257.7" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="794.5,262.7 804.7,256.7 794.9,250.6" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polygon points="205,420 357.5,419 510,421 511,523 327.0,522 204,523 205,420" fill="#f6eee4"/>
+<polyline points="205.3,419.9 358.7,418.0 509.9,420.3 510.5,522.4 325.9,521.1 203.6,522.9 204.6,420.1" fill="none" stroke="#34404a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="222" y="460.14" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="24" fill="#34404a">G1：等待 I/O</text>
+<text x="222" y="496.14" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="24" fill="#34404a">不占着 M 执行业务</text>
+<polygon points="745,420 907.5,419 1070,421 1071,523 875.0,522 744,523 745,420" fill="#eef4fa"/>
+<polyline points="745.3,419.7 907.0,417.9 1070.2,421.3 1071.8,523.1 876.0,522.5 743.9,523.1 745.0,419.3" fill="none" stroke="#34404a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="762" y="460.28" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="23" fill="#34404a">G1：变为可运行</text>
+<text x="762" y="495.28" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="23" fill="#34404a">等待调度，不是立即跑</text>
+<polyline points="302.1,305.7 304.3,357.6 302.5,415.9" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="298.0,404.3 302.6,415.8 307.5,405.4" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="517.9,469.3 630.5,467.8 738.0,470.4" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="726.6,475.8 738.1,469.9 726.5,463.4" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="550" y="424.64" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="24" fill="#326ea1">fd 就绪</text>
+<polyline points="921.1,415.5 921.8,359.5 920.6,308.3" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="926.8,320.8 920.7,308.1 914.8,319.4" fill="none" stroke="#326ea1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="42" y="652.2" font-family="KaiTi,STKaiti,Microsoft YaHei,sans-serif" font-size="20" fill="#65717a">等待的 G 仍然占用栈、连接等资源；并发不是零成本。</text>
+</svg>
