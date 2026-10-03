@@ -44,12 +44,13 @@
   }
   const feed=params=>rpc('blog_feed',{who:null,board:null,folder:null,search:'',drafts:false,page_number:1,...params});
   async function forum({section='',search='',page_number=1}={}){
-    const sections=['frontend','backend','ai','engineering','general'];if(section&&!sections.includes(section))throw Error('论坛分区不存在。');
-    const query=new URLSearchParams({select:'id,owner_id,collection,folder_id,title,summary,metadata,published,created_at,updated_at',published:'eq.true','metadata->>forum_sync':'eq.true','metadata->>forum_section':section?'eq.'+section:'in.('+sections.join(',')+')',order:'created_at.desc,id.desc',limit:'20',offset:String((Math.max(1,Math.min(Number(page_number)||1,10000))-1)*20)});
+    if(['engineering','general'].includes(section))section='language';
+    const sections=['frontend','backend','ai','language','engineering','general'];if(section&&!sections.includes(section))throw Error('论坛分区不存在。');
+    const query=new URLSearchParams({select:'id,owner_id,collection,folder_id,title,summary,metadata,published,created_at,updated_at',published:'eq.true','metadata->>forum_sync':'eq.true','metadata->>forum_section':section==='language'?'in.(language,engineering,general)':section?'eq.'+section:'in.('+sections.join(',')+')',order:'created_at.desc,id.desc',limit:'20',offset:String((Math.max(1,Math.min(Number(page_number)||1,10000))-1)*20)});
     if(search.trim()){const pattern='*'+search.trim().slice(0,120).replace(/["\\*%_]/g,' ')+'*';query.set('or','(title.ilike."'+pattern+'",summary.ilike."'+pattern+'",body.ilike."'+pattern+'")');}
     const result=await C.request('/rest/v1/blog_posts?'+query,{headers:{Prefer:'count=exact'},withCount:true});
     const ids=[...new Set(result.data.map(p=>p.owner_id))],profiles=ids.length?await C.request('/rest/v1/blog_profiles?select=user_id,username,display_name&user_id=in.('+ids.map(encode).join(',')+')'):[];
-    return {total:result.total,items:result.data.map(p=>({...p,author:profiles.find(a=>a.user_id===p.owner_id)}))};
+    return {total:result.total,items:result.data.map(p=>({...p,metadata:{...p.metadata,forum_section:['engineering','general'].includes(p.metadata.forum_section)?'language':p.metadata.forum_section},author:profiles.find(a=>a.user_id===p.owner_id)}))};
   }
   const folders=(owner,board)=>C.request('/rest/v1/blog_folders?select=*&owner_id=eq.'+encode(owner)+(board?'&collection=eq.'+encode(board):'')+'&order=name.asc&limit=100',{auth:!!C.currentUser()});
   const titles=(owner,board)=>C.request('/rest/v1/blog_posts?select=id,title,folder_id,published,collection&owner_id=eq.'+encode(owner)+(board?'&collection=eq.'+encode(board):'')+(C.currentUser()?.id===owner?'':'&published=eq.true')+'&order=title.asc&limit=100',{auth:!!C.currentUser()});
