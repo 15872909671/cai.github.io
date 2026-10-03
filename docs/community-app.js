@@ -50,7 +50,7 @@
   const navSpecs=[['home','主页','⌂'],['space','空间','▱'],['posts','论坛','▤'],['tools','工具','⚒']];
   function navigation(profile=null,folders=[],currentBoard=null){
     const href=k=>k==='home'?'#/':'#/'+k;
-    authorNavProfile=profile;
+    authorNavProfile=profile;document.body.classList.toggle("global-shell",!profile);
     if(!profile)nav.innerHTML=`<div class="mega-tabs">${navSpecs.map(([key,label,icon])=>`<a class="mega-tab" href="${href(key)}"><span aria-hidden="true">${icon}</span>${label}</a>`).join('')}</div>`;
     nav.classList.toggle('author-nav',!!profile);
     if(profile){
@@ -302,7 +302,7 @@
       else if(page==='career'){show('职业合集','<h1>职业合集</h1><div class="folder-chips"><a href="#/projects">作品集</a><a href="#/interviews">面试经历</a></div>');}
       else if(!page||page==='home'){
         main.classList.remove('is-writing','is-reading','is-documents');document.body.classList.add('is-home');document.title='主页 · CAI';
-        main.innerHTML='<div class="home-art" role="img" aria-label="山峦风景画"></div>';
+        main.innerHTML='<div class="home-art" role="img" aria-label="蓝色海面与天空"></div>';
       }else if(page==='posts'||boards[page])await listing(query,null,boards[page]?page:null,ticket);
       else throw Error('页面不存在。');
     }catch(e){if(ticket===epoch)errorPage(e);}finally{if(ticket===epoch)main.removeAttribute('aria-busy');}
@@ -315,6 +315,7 @@
   const accountPanel=document.createElement('div');accountPanel.id='account-popover';accountPanel.className='account-popover';accountPanel.hidden=true;accountPanel.setAttribute('aria-label','账号操作');accountWrap.append(accountPanel);account.setAttribute('aria-controls',accountPanel.id);account.setAttribute('aria-expanded','false');
   function setAccountOpen(open){accountPanel.hidden=!open;account.setAttribute('aria-expanded',String(open));}
   function refreshAccount(){
+    account.classList.toggle('is-guest',!who());
     account.innerHTML=who()?avatar(mine):'<span class="user-avatar" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 22v-3a8 8 0 0 1 16 0v3"/></svg></span>';
     account.setAttribute('aria-label',who()?displayName(mine)+'的账号菜单':'访客账号菜单');account.removeAttribute('title');
     accountPanel.innerHTML='<button type="button" data-account-profile>个人资料</button><button type="button" data-account-space>我的空间</button><button type="button" data-account-auth>'+ (who()?'登出':'登录')+'</button>';setAccountOpen(false);

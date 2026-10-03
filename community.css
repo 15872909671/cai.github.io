@@ -271,3 +271,22 @@ body.is-home .footer{display:none}
 .document-editor-tools{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:4px 0 18px}.inline-editor .visibility-field{display:flex;align-items:center;gap:8px;margin:0;font-size:13px;white-space:nowrap}.inline-editor .visibility-field select{width:auto;margin:0;padding:7px 10px;min-height:34px;border-radius:6px;background:var(--ref-bg);color:var(--ref-ink);border:1px solid var(--line)}#visibility-hint{font-size:12px;color:var(--ref-muted)}.document-editor-tools>.community-actions{margin-left:auto}.inline-editor>.title-field{margin-top:0}@media(max-width:800px){.document-editor-tools>.community-actions{margin-left:0;width:100%}.document-editor-tools{gap:8px}}
 
 #main.is-documents .workspace-empty{min-height:calc(100dvh - 160px);display:grid;place-items:center;color:var(--ref-muted);font-size:13px}#main.is-documents .file-pane:has(.workspace-empty){max-width:none}.document-tabbar{display:flex;border-bottom:1px solid var(--line);margin:-30px -40px 24px;background:var(--ref-card);min-height:42px}.document-tab{display:flex;align-items:center;gap:24px;border-right:1px solid var(--line);border-top:2px solid var(--ref-blue);padding:8px 16px;max-width:320px;font-size:13px}.document-tab span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.document-tab a{font-size:20px;line-height:1;color:var(--ref-muted)}#main.is-documents summary.tree-selected{background:var(--ref-bg);border-radius:4px}@media(max-width:800px){.document-tabbar{margin:-20px -16px 20px}}
+
+/* Public shell: light editorial navigation, separate from the document workspace. */
+body.global-shell .header{height:64px;background:#fff!important;color:#252a2e!important;border-bottom:1px solid #eef0f1;box-shadow:none;backdrop-filter:none;color-scheme:light}
+body.global-shell .header .header-inner{height:64px;max-width:none;padding:0 34px;gap:22px}
+body.global-shell .header .brand-mark{color:#111!important;font-size:30px;font-weight:750;letter-spacing:-1.5px}
+body.global-shell .header #nav{flex:1;width:auto;margin-left:32px;margin-right:20px}
+body.global-shell .header #nav .mega-tabs{display:flex;justify-content:flex-start;align-items:center;gap:30px;height:64px}
+body.global-shell .header #nav .mega-tab{color:#50565a!important;font-size:13px;font-weight:400;padding:22px 0;border:0!important;min-width:0;line-height:20px}
+body.global-shell .header #nav .mega-tab>span{display:none}
+body.global-shell .header #nav .mega-tab::after,body.global-shell .header #nav .mega-tab::before{display:none!important}
+body.global-shell .header #nav .mega-tab:hover,body.global-shell .header #nav .mega-tab[aria-current=page]{color:#27839c!important;background:transparent!important}
+body.global-shell .header .header-search{flex:0 1 170px;border:0;border-bottom:1px solid #d9e0e3;border-radius:0;background:transparent;color:#465158;margin-left:auto;height:30px}
+body.global-shell .header .header-search input{color:#465158;font-size:12px;padding-left:0}body.global-shell .header .header-search input::placeholder{color:#899397}
+body.global-shell .header .theme-toggle,body.global-shell .header .menu-toggle{color:#788c95;background:transparent;border:0}
+body.global-shell .header .account-button.is-guest{border:1px solid #86aebb;border-radius:24px;padding:7px 22px;background:#fff;color:#568495;min-width:78px;height:34px;max-width:none}
+body.global-shell .header .account-button.is-guest .user-avatar{display:none}body.global-shell .header .account-button.is-guest::after{content:'登录';font-size:12px;font-weight:400}
+body.global-shell .header .account-button .user-avatar{background:#edf4f6;color:#497f91}
+body.global-shell.is-home .home-art{inset:64px 0 0;background:#7bbedb url('https://images.unsplash.com/photo-1585238827373-5e93e53b01f3?auto=format&fit=crop&w=2400&q=85') center 52%/cover no-repeat}
+@media(max-width:760px){body.global-shell .header .header-inner{padding:0 18px;gap:12px}body.global-shell .header .brand-mark{font-size:27px}body.global-shell .header #nav{margin:0;width:auto}body.global-shell .header #nav.open{inset:64px 0 auto;background:#fff;width:100%;padding:8px 22px;box-sizing:border-box}body.global-shell .header #nav.open .mega-tabs{height:auto;gap:28px;flex-wrap:wrap}body.global-shell .header #nav .mega-tab{padding:14px 0}body.global-shell .header .header-search{min-width:60px;flex:1}body.global-shell .header .account-button.is-guest{padding:6px 14px;min-width:58px}.global-shell .header .theme-toggle{display:none}}
