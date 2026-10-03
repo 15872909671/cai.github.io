@@ -16,7 +16,7 @@ if(community){
   const response=await fetch(url+'/rest/v1/rpc/blog_feed',{method:'POST',headers:{apikey:key,'Content-Type':'application/json'},body:JSON.stringify({page_number:1}),signal:AbortSignal.timeout(15000)});
   if(!response.ok)throw Error('Community feed is not ready; existing entry point was not changed.');
   const feed=await response.json();if(!Array.isArray(feed.items)||typeof feed.total!=='number'||feed.items.some(p=>'body' in p))throw Error('Unexpected community feed response');
-  const html=(await readFile(path.join(root,'community-preview.html'),'utf8')).replaceAll('signup-validation-20261002','community-20261003-r27').replace(/(community(?:-api|-auth|-app)?\.(?:css|js))"/g,'$1?v=community-20261003-r27"');
+  const html=(await readFile(path.join(root,'community-preview.html'),'utf8')).replaceAll('signup-validation-20261002','community-20261003-r28').replace(/(community(?:-api|-auth|-app)?\.(?:css|js))"/g,'$1?v=community-20261003-r28"');
   await writeFile(path.join(root,'index.html'),html);
 }
 const read=async p=>JSON.parse(await readFile(path.join(root,p),'utf8'));
