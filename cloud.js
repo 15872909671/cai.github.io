@@ -2,7 +2,7 @@
   'use strict';
   let session=null,refreshing=null;
   const config=window.CLOUD_CONFIG;
-  async function request(path,{method='GET',body,auth=false,headers={},binary=false}={}){
+  async function request(path,{method='GET',body,auth=false,headers={},binary=false,withCount=false}={}){
     if(auth){
       if(!session)throw Error('请先登录。');
       if(Date.now()>session.expires_at){
@@ -19,7 +19,7 @@
       const translated=rules.find(([pattern])=>pattern.test(details))?.[1];
       const e=Error(messages[result?.code]||translated||(result?.code==='PGRST205'?'服务暂时不可用，请稍后重试。':response.status===401?'登录失败或已过期，请检查邮箱和密码。':response.status===403?'当前账号无权执行此操作。':result?.code==='23505'?'名称或 ID 已被使用，请换一个。':result?.code==='23503'?'该内容仍有关联的帖子或子目录，请先移出后重试。':details||'请求失败'));e.status=response.status;throw e;
     }
-    return result;
+    return withCount?{data:result,total:Number(response.headers.get("content-range")?.split("/").at(-1))||0}:result;
   }
   function setSession(data){session={...data,expires_at:Date.now()+(data.expires_in-60)*1000};return session;}
   async function login(email,password){

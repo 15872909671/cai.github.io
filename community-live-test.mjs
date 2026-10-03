@@ -12,7 +12,7 @@ async function go(hash){w.location.hash=hash;await new Promise(r=>setTimeout(r,1
 try{
  for(const script of d.querySelectorAll('script[src]')){const url=new URL(script.getAttribute('src'),base);const response=await fetch(url);assert.equal(response.status,200,url.href);w.eval(await response.text());}
  await ready();assert.ok(d.querySelector('.home-art'));assert.equal(d.querySelector('.community-feed'),null);await go('#/posts');assert.ok(d.querySelector('.community-feed'));const cards=d.querySelectorAll('.community-post');assert.ok(cards.length<=20);
- const baseline=await w.CommunityAPI.feed({page_number:1});assert.equal(cards.length,baseline.items.length);
+ const baseline=await w.CommunityAPI.forum({page_number:1});assert.equal(cards.length,baseline.items.length);
  let author;
  if(cards.length){const post=cards[0].querySelector('a[href^="#/post/"]').getAttribute('href');author=cards[0].querySelector('.user-link').getAttribute('href');await go(post);assert.ok(d.querySelector('.article-body'));assert.ok(d.querySelector('[data-comment-login]'));assert.equal(d.querySelector('[data-edit]'),null);}
  else{assert.ok(d.querySelector('.feed-empty'));const profile=await w.CommunityAPI.profile('430ef651-e7f9-4979-96e1-67e6bca2814d','user_id');assert.ok(profile);author='#/u/'+encodeURIComponent(profile.username);console.log('NOTE: live API has no public posts; live reading checks skipped. Reading remains covered by the local UI test.');}
@@ -21,4 +21,3 @@ try{
  await go('#/tools');assert.ok(d.querySelector('.community-feed'));await go('#/photos');assert.ok(d.querySelector('.community-feed'));
  console.log('PASS: deployed scripts + real Supabase match public feed, render author file tree, guestbook, tools and photos without anonymous editing.');
 }finally{dom.window.close();}
-
