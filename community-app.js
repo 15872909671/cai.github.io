@@ -100,8 +100,49 @@
     root.querySelectorAll('details[data-tree-folder]').forEach(d=>d.addEventListener('toggle',()=>{const open=treeOpen.get(profile.user_id)||new Set();d.open?open.add(d.dataset.treeFolder):open.delete(d.dataset.treeFolder);treeOpen.set(profile.user_id,open);}));
     root.querySelector('[data-tree-new-post]')?.addEventListener('click',()=>writeNew(board,folderId));
     root.querySelector('[data-tree-new-folder]')?.addEventListener('click',()=>folderCreate(board,folderId));
-    root.querySelectorAll('[data-folder-menu]').forEach(button=>button.onclick=e=>{e.preventDefault();e.stopPropagation();const f=folders.find(x=>x.id===button.dataset.folderMenu);popup(`<h2>${E(f.name)}</h2><div class="account-menu"><button data-tree-child>新建子文件夹</button><button data-tree-post>新建帖子</button><button data-tree-manage>重命名、移动或删除</button><button data-close>取消</button></div>`);modal.querySelector('[data-tree-child]').onclick=()=>folderCreate(f.collection,f.id);modal.querySelector('[data-tree-post]').onclick=()=>{modal.close();writeNew(f.collection,f.id);};modal.querySelector('[data-tree-manage]').onclick=()=>folderManage(f,folders);});
-    root.querySelectorAll('[data-post-menu]').forEach(button=>button.onclick=()=>{const id=button.dataset.postMenu;popup('<h2>帖子操作</h2><div class="account-menu"><button data-tree-edit>编辑</button><button data-tree-move>移动</button><button data-tree-delete>删除</button><button data-close>取消</button></div>');modal.querySelector('[data-tree-edit]').onclick=()=>{modal.close();location.hash='#/edit/'+enc(id);};modal.querySelector('[data-tree-move]').onclick=()=>job(async()=>{const p=await A.post(id);movePost(p,folders.filter(f=>f.collection===p.collection));},modal);modal.querySelector('[data-tree-delete]').onclick=()=>{if(!confirm('永久删除这篇帖子及其评论？'))return;job(async()=>{const p=await A.post(id);await A.rpc('blog_file_operation',{action:'delete_post',target_id:id,expected_version:p.version},true);modal.close();location.hash=spaceURL(profile,p.folder_id?{folder:p.folder_id}:{});await render();},modal);};});
+    if(profile.user_id!==who())return;
+    const sidebar=root.closest('aside');
+    const actions=(target)=>{
+      const summary=target.closest('summary'),row=target.closest('.post-node');
+      const f=summary?folders.find(x=>x.id===summary.closest('details').dataset.treeFolder):null;
+      const p=row?titles.find(x=>x.id===row.querySelector('[data-post-menu]')?.dataset.postMenu):null;
+      const parent=f?.id||null,collection=f?.collection||'knowledge';
+      if(p)return [
+        ['编辑',()=>{location.hash='#/edit/'+enc(p.id);}],
+        ['重命名',()=>renameTreeItem(row.querySelector('a'),p,false)],
+        ['移动',()=>job(async()=>{const latest=await A.post(p.id);movePost(latest,folders.filter(f=>f.collection===latest.collection));},main)],
+        ['删除',()=>{if(!confirm('永久删除“'+p.title+'”及其评论？'))return;job(async()=>{const latest=await A.post(p.id);await A.rpc('blog_file_operation',{action:'delete_post',target_id:p.id,expected_version:latest.version},true);location.hash=spaceURL(profile,p.folder_id?{folder:p.folder_id}:{});await render();},main);},'danger']
+      ];
+      return [['新建文件',()=>writeNew(collection,parent)],['新建文件夹',()=>folderCreate(collection,parent)],...(f?[
+        ['重命名',()=>renameTreeItem(summary.querySelector('a'),f,true)],
+        ['移动',()=>folderManage(f,folders)],
+        ['删除',()=>deleteFolder(f,main),'danger']
+      ]:[])];
+    };
+    const openMenu=(event,target,x,y)=>{event.preventDefault();event.stopPropagation();if(dirty){toast("请先保存正在编辑的内容，再管理文件。");return;}openTreeMenu(actions(target),x,y,target);};
+    sidebar.addEventListener('contextmenu',e=>{if(e.target.closest('input,textarea'))return;openMenu(e,e.target,e.clientX,e.clientY);});
+    root.querySelectorAll('[data-folder-menu],[data-post-menu]').forEach(button=>button.onclick=e=>{const r=button.getBoundingClientRect();openMenu(e,button,r.left,r.bottom);});
+    sidebar.addEventListener('keydown',e=>{if(e.key==='ContextMenu'||(e.shiftKey&&e.key==='F10')){const r=e.target.getBoundingClientRect();openMenu(e,e.target,r.left,r.bottom);}});
+
+  }
+  let closeTreeMenu=()=>{};
+  function openTreeMenu(items,x,y,origin){
+    closeTreeMenu();const menu=document.createElement('div'),events=new AbortController();
+    menu.className='tree-context-menu';menu.setAttribute('role','menu');menu.setAttribute('aria-label','文件操作');
+    menu.innerHTML=items.map(([label,,kind],i)=>`<button type="button" role="menuitem" data-action="${i}" class="${kind||''}">${E(label)}</button>`).join('');
+    document.body.append(menu);const r=menu.getBoundingClientRect();menu.style.left=Math.max(8,Math.min(x,innerWidth-r.width-8))+'px';menu.style.top=Math.max(8,Math.min(y,innerHeight-r.height-8))+'px';
+    const close=(restore=false)=>{events.abort();menu.remove();if(restore&&origin.isConnected)origin.focus();closeTreeMenu=()=>{};};closeTreeMenu=close;
+    menu.querySelectorAll('button').forEach(b=>b.onclick=()=>{const action=items[Number(b.dataset.action)][1];close();action();});
+    menu.onkeydown=e=>{const buttons=[...menu.querySelectorAll('button')],i=buttons.indexOf(document.activeElement);if(['ArrowDown','ArrowUp','Home','End','Escape','Tab'].includes(e.key)){e.preventDefault();if(e.key==='Escape'||e.key==='Tab')return close(true);buttons[e.key==='Home'?0:e.key==='End'?buttons.length-1:(i+(e.key==='ArrowDown'?1:-1)+buttons.length)%buttons.length].focus();}};
+    document.addEventListener('pointerdown',e=>{if(!menu.contains(e.target))close();},{signal:events.signal});
+    window.addEventListener('resize',()=>close(),{signal:events.signal});window.addEventListener('scroll',()=>close(),{signal:events.signal,capture:true});window.addEventListener('hashchange',()=>close(),{signal:events.signal});
+    menu.querySelector('button').focus();
+  }
+  function renameTreeItem(label,item,isFolder){
+    const old=isFolder?item.name:item.title,input=document.createElement('input');input.className='tree-rename';input.value=old;input.maxLength=isFolder?100:200;input.setAttribute('aria-label',isFolder?'文件夹名称':'文件名称');
+    label.hidden=true;label.after(input);input.focus();input.select();let done=false;
+    const cancel=()=>{if(done)return;done=true;input.remove();label.hidden=false;};
+    input.onclick=e=>e.stopPropagation();input.onkeydown=e=>{e.stopPropagation();if(e.key==='Escape'){e.preventDefault();cancel();}if(e.key==='Enter'){e.preventDefault();const name=input.value.trim();if(!name){input.setCustomValidity('名称不能为空');input.reportValidity();return;}if(name===old)return cancel();done=true;input.disabled=true;job(async()=>{try{if(isFolder)await A.rpc('blog_file_operation',{action:'rename_folder',target_id:item.id,expected_version:item.version,new_name:name},true);else {const latest=await A.post(item.id);await C.save({id:item.id,title:name},latest.version);}await render();toast('已重命名。');}finally{input.remove();label.hidden=false;}},main);}};input.onblur=cancel;
   }
   async function authorFiles(query,profile,ticket){
     const owner=profile.user_id===who(),folderId=query.get('folder'),drafts=query.get('view')==='drafts',search=(query.get('q')||'').trim();
@@ -157,7 +198,9 @@
   function folderCreate(board,parent){popup(`<form><h2>新建文件夹</h2><label>名称<input name="name" maxlength="100" required></label>${board?'':`<label>内容类型<select name="collection">${Object.entries(boards).map(([id,label])=>`<option value="${id}">${E(label)}</option>`).join('')}</select></label>`}<div class="dialog-actions"><button class="primary">创建</button><button type="button" data-close>取消</button></div></form>`);modal.querySelector('form').onsubmit=e=>{e.preventDefault();const name=e.currentTarget.elements.name.value.trim(),collection=board||e.currentTarget.elements.collection.value;if(!name)return;job(async()=>{const [folder]=await C.createFolder({id:crypto.randomUUID(),owner_id:who(),collection,parent_id:parent||null,name});modal.close();location.hash=spaceURL(mine,{folder:folder.id});toast('文件夹已创建。');},modal);};}
   function folderManage(folder,folders){popup(`<form><h2>管理文件夹</h2><label>名称<input name="name" value="${E(folder.name)}" maxlength="100" required></label><label>移入<select name="parent">${folderOptions(folders.filter(f=>f.collection===folder.collection),folder.parent_id,folder.id)}</select></label><div class="dialog-actions"><button class="primary">保存</button><button type="button" data-delete-folder>删除文件夹</button><button type="button" data-close>取消</button></div></form>`);
     modal.querySelector('form').onsubmit=e=>{e.preventDefault();const f=e.currentTarget,name=f.elements.name.value.trim(),parent=f.elements.parent.value||null;if(!name)return;job(async()=>{let version=folder.version;if(parent!==folder.parent_id){await A.rpc('blog_file_operation',{action:'move_folder',target_id:folder.id,expected_version:version,new_parent:parent},true);version++;folder={...folder,parent_id:parent,version};}if(name!==folder.name){await A.rpc('blog_file_operation',{action:'rename_folder',target_id:folder.id,expected_version:version,new_name:name},true);}modal.close();await render();toast('合集已更新。');},modal);};
-    modal.querySelector('[data-delete-folder]').onclick=()=>job(async()=>{
+    modal.querySelector('[data-delete-folder]').onclick=()=>deleteFolder(folder,modal);
+  }
+  function deleteFolder(folder,scope){return job(async()=>{
       const latest=await A.folders(who()),root=latest.find(f=>f.id===folder.id);if(!root)throw Error('文件夹已不存在，请刷新。');
       const ids=new Set([root.id]),ordered=[root];for(let i=0;i<ordered.length;i++)for(const f of latest)if(f.parent_id===ordered[i].id&&!ids.has(f.id)){ids.add(f.id);ordered.push(f);}
       const posts=(await A.titles(who())).filter(p=>ids.has(p.folder_id));
@@ -167,8 +210,9 @@
         for(const f of ordered.reverse()){await A.rpc('blog_file_operation',{action:'delete_folder',target_id:f.id,expected_version:f.version},true);removed++;}
       }catch(error){throw Error((removed?'已删除 '+removed+' 项，其余内容保留。':'')+error.message);}
       modal.close();location.hash=spaceURL(mine,root.parent_id?{folder:root.parent_id}:{});await render();toast('文件夹已删除。');
-    },modal);
+    },scope);
   }
+
   function movePost(post,folders){popup(`<form><h2>移动帖子</h2><label>所在文件夹<select name="folder">${folderOptions(folders,post.folder_id)}</select></label><div class="dialog-actions"><button class="primary">保存</button><button type="button" data-close>取消</button></div></form>`);modal.querySelector('form').onsubmit=e=>{e.preventDefault();const folder=e.currentTarget.elements.folder.value||null;job(async()=>{await C.save({id:post.id,folder_id:folder},post.version);modal.close();await render();toast('帖子已移动。');},modal);};}
 
   const draftPrefix=()=> 'cai-drafts:'+who()+':';
