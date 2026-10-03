@@ -110,4 +110,10 @@ await role('authenticated',B);count=await vote(-1);assert.equal(count.likes,1);a
 await role('anon');count=(await db.query("select blog_post_interactions(array['b-public','a-draft']) as data")).rows[0].data;assert.equal(count.length,1);assert.equal(count[0].mine,0);assert.equal(count[0].likes,1);
 await role('authenticated',B);await db.query("update blog_posts set published=false where id='b-public'");assert.equal((await db.query("select blog_post_interactions(array['b-public']) as data")).rows[0].data.length,0);await fail("select blog_react('b-public',1::smallint)");
 await db.exec('reset role');await db.query("delete from blog_posts where id='b-public'");assert.equal((await db.query("select count(*)::int as n from blog_reactions where post_id='b-public'")).rows[0].n,0);
+await db.exec('reset role');const about=await readFile('supabase/about-me.sql','utf8');await db.exec(about);await db.exec(about);
+await role('authenticated',B);await db.query("update blog_profiles set featured_posts=array['page-00','page-01'] where user_id=$1",[B]);
+await fail("update blog_profiles set featured_posts=array['page-00','page-00'] where user_id=$1",[B]);
+await fail("update blog_profiles set featured_posts=array['a-draft'] where user_id=$1",[B]);await fail("update blog_profiles set featured_posts=array['b-draft'] where user_id=$1",[B]);
+await role('authenticated',A);assert.equal((await db.query("update blog_profiles set featured_posts='{}' where user_id=$1 returning user_id",[B])).rows.length,0);
+await role('anon');await fail("update blog_profiles set featured_posts='{}' where user_id=$1",[B]);
 await db.close();console.log('PASS: repeatable legacy migration, two-user isolation, anonymous/unverified denial, ownership FKs, comments/replies/moderation, drafts, private images, byte quotas, server search and disjoint pagination.');

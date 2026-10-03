@@ -56,8 +56,8 @@
     if(!profile)nav.innerHTML=`<div class="mega-tabs">${navSpecs.map(([key,label,icon])=>`<a class="mega-tab" href="${href(key)}"><span aria-hidden="true">${icon}</span>${label}</a>`).join('')}</div>`;
     nav.classList.toggle('author-nav',!!profile);
     if(profile){
-      const view=route().query.get('view'),active=view==='guestbook'?'guestbook':view==='moments'||currentBoard==='moments'?'moments':'blog';
-      nav.innerHTML=`<div class="mega-tabs"><div class="space-heading"><button class="space-back" type="button" aria-label="返回全站栏目" title="返回全站栏目">←</button><a class="space-identity" href="${spaceURL(profile)}">${avatar(profile)}<span>${E(displayName(profile))}的空间</span></a></div>${[['blog','博客',{}],['moments','动态',{view:'moments'}],['guestbook','留言',{view:'guestbook'}]].map(([key,label,params])=>`<a class="mega-tab" href="${spaceURL(profile,params)}" ${key===active?'aria-current="page"':''}>${label}</a>`).join('')}</div>`;
+      const view=route().query.get('view'),active=view==='about'?'about':view==='guestbook'?'guestbook':view==='moments'||currentBoard==='moments'?'moments':'blog';
+      nav.innerHTML=`<div class="mega-tabs"><div class="space-heading"><button class="space-back" type="button" aria-label="返回全站栏目" title="返回全站栏目">←</button><a class="space-identity" href="${spaceURL(profile)}">${avatar(profile)}<span>${E(displayName(profile))}的空间</span></a></div>${[['about','关于我',{view:'about'}],['blog','博客',{}],['moments','动态',{view:'moments'}],['guestbook','留言',{view:'guestbook'}]].map(([key,label,params])=>`<a class="mega-tab" href="${spaceURL(profile,params)}" ${key===active?'aria-current="page"':''}>${label}</a>`).join('')}</div>`;
     }
     nav.querySelector('.space-back')?.addEventListener('click',()=>{location.hash=returnToGlobal;});
     const state=route(),section=currentBoard||state.query.get('board')||state.parts[0],activeKey=state.parts[0]==='u'||section==='space'?'space':['photos','tools','moments'].includes(section)?section:['','home'].includes(section)?'home':['knowledge','projects','interviews','essays','posts','guestbook','post'].includes(section)?'posts':null;nav.querySelectorAll('.mega-tab').forEach((a,i)=>{if(!profile&&navSpecs[i][0]===activeKey)a.setAttribute('aria-current','page');});
@@ -205,6 +205,26 @@
     navigation(profile);bindDocumentTree(profile,folders,titles,folderId);
 
   }
+  async function aboutPage(profile,ticket){
+    const posts=await A.publicLibrary(profile.user_id);if(ticket!==epoch)return;
+    const selected=(profile.featured_posts||[]).map(id=>posts.find(p=>p.id===id)).filter(Boolean),owner=profile.user_id===who();
+    show('关于 '+displayName(profile),`<section class="about-page"><header class="about-identity">${avatar(profile)}<div><span class="about-kicker">关于我</span><h1>${E(displayName(profile))}</h1></div>${owner?'<button type="button" class="about-edit" data-about-edit>编辑名片</button>':''}</header>${profile.bio?`<p class="about-bio">${E(profile.bio)}</p>`:''}<div class="about-links"><a href="${spaceURL(profile)}">浏览全部博客 ↗</a>${safe(profile.website)?`<a href="${safe(profile.website)}" target="_blank" rel="noopener noreferrer">个人网站 ↗</a>`:''}</div>${selected.length?`<div class="about-featured">${selected.map(p=>`<a class="about-post" href="${postURL(p.id)}"><span class="about-post-type">${E(boards[p.collection]||'博客')}</span><h2>${E(p.title)}</h2>${p.summary?`<p>${E(p.summary)}</p>`:''}<span class="about-post-arrow" aria-hidden="true">↗</span></a>`).join('')}</div>`:owner?'<button class="about-add" data-about-edit>选择作品与技术帖子</button>':''}</section>`);navigation(profile);
+    main.querySelectorAll('[data-about-edit]').forEach(b=>b.onclick=()=>editAbout(profile,posts));
+  }
+  function editAbout(profile,posts){
+    let chosen=(profile.featured_posts||[]).filter(id=>posts.some(p=>p.id===id));
+    popup(`<form id="about-form"><h2>编辑名片</h2><label>自我介绍<textarea name="bio" maxlength="500" rows="4">${E(profile.bio||'')}</textarea></label><label>添加公开帖子<select name="post"><option value="">选择一篇帖子</option></select></label><button type="button" data-about-add>添加</button><ol class="about-selection"></ol><p>最多展示 12 篇；仅展示你自己的公开帖子。移除链接不会删除帖子。</p><div class="dialog-actions"><button type="button" data-close>取消</button><button class="primary" type="submit">保存</button></div></form>`);
+    const form=modal.querySelector('form'),list=form.querySelector('ol');
+    const draw=()=>{
+      form.elements.post.innerHTML='<option value="">选择一篇帖子</option>'+posts.filter(p=>!chosen.includes(p.id)).map(p=>`<option value="${E(p.id)}">${E(p.title)}</option>`).join('');form.querySelector('[data-about-add]').disabled=chosen.length>=12||!posts.some(p=>!chosen.includes(p.id));
+      list.innerHTML=chosen.map((id,i)=>`<li><span>${E(posts.find(p=>p.id===id).title)}</span><button type="button" data-up="${i}" aria-label="上移 ${E(posts.find(p=>p.id===id).title)}" ${i===0?'disabled':''}>↑</button><button type="button" data-down="${i}" aria-label="下移 ${E(posts.find(p=>p.id===id).title)}" ${i===chosen.length-1?'disabled':''}>↓</button><button type="button" data-remove="${i}" aria-label="移除 ${E(posts.find(p=>p.id===id).title)}">×</button></li>`).join('');
+      list.querySelectorAll('[data-up]').forEach(b=>b.onclick=()=>{const i=Number(b.dataset.up);[chosen[i-1],chosen[i]]=[chosen[i],chosen[i-1]];draw();});
+      list.querySelectorAll('[data-down]').forEach(b=>b.onclick=()=>{const i=Number(b.dataset.down);[chosen[i+1],chosen[i]]=[chosen[i],chosen[i+1]];draw();});
+      list.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{chosen.splice(Number(b.dataset.remove),1);draw();});
+    };draw();
+    form.querySelector('[data-about-add]').onclick=()=>{const id=form.elements.post.value;if(id&&chosen.length<12&&!chosen.includes(id)){chosen.push(id);draw();}};
+    form.onsubmit=e=>{e.preventDefault();job(async()=>{await A.saveProfile({bio:form.elements.bio.value.trim(),featured_posts:chosen});mine=await A.ownProfile();modal.close();await render();toast('名片已更新。');},modal);};
+  }
   async function momentPage(query,ticket,profile=null){
     const page=Math.max(1,Number(query.get('page'))||1),data=await A.moments(page,profile?.user_id);if(ticket!==epoch)return;
     show('动态',`<section class="moments-page"><header class="board-head"><h1>动态</h1></header>${who()&&(!profile||profile.user_id===who())?'<form id="moment-form" class="moment-compose"><label class="sr-only" for="moment-body">动态内容</label><textarea id="moment-body" name="body" maxlength="1000" required placeholder="分享此刻的想法…"></textarea><div class="community-actions"><span id="moment-count">0 / 1000</span><button class="forum-primary">发布动态</button></div></form>':(!profile?'<div class="moment-compose"><button data-moment-login>登录后写动态</button></div>':'')}<div class="moments-feed">${data.items.map(p=>`<article class="moment-card"><div class="post-byline">${userLink(p.author)}<span>${date(p.created_at)}</span></div><p class="moment-body">${E(p.body)}</p>${interactionSlot(p.id)}</article>`).join('')||'<div class="feed-empty"><h2>还没有动态</h2></div>'}</div><nav class="forum-pagination" aria-label="分页">${page>1?`<a href="${profile?spaceURL(profile,{view:'moments',page:page-1}):'#/moments?page='+(page-1)}">上一页</a>`:''}${data.more?`<a href="${profile?spaceURL(profile,{view:'moments',page:page+1}):'#/moments?page='+(page+1)}">下一页</a>`:''}</nav></section>`);navigation(profile);loadInteractions(main,ticket);
@@ -319,6 +339,7 @@
       else if(page==='u'){
         const profile=await A.profile(id);if(ticket!==epoch)return;if(!profile)throw Error('作者空间不存在。');
         if(query.get('view')==='guestbook'){show('作者留言',`<h1>给 ${E(displayName(profile))} 留言</h1><section id="comments" class="comments-section"></section>`,profileCard(profile,profile.user_id===who()));navigation(profile);await comments({spaceId:profile.user_id,ownerId:profile.user_id},main.querySelector('#comments'),ticket);}
+        else if(query.get('view')==='about')await aboutPage(profile,ticket);
         else if(query.get('view')==='moments')await momentPage(query,ticket,profile);
         else await authorFiles(query,profile,ticket);
       }else if(page==='write'||page==='edit')await editor(page==='edit'?id:null,query,ticket);
